@@ -99,3 +99,11 @@ function calculateAverageElevation() {
     const averageElevation = (totalElevation / elevationData.length).toFixed(2);
     document.getElementById('info').innerHTML += `<br>Average Elevation: ${averageElevation} meters`;
 }
+
+const angle_ranger = document.getElementById('angle-ranger');
+const angle_current_value = document.getElementById('angle-current-value');
+angle_current_value.innerText = angle_ranger.value + "°";
+
+angle_ranger.addEventListener('input', () => {
+  angle_current_value.textContent = angle_ranger.value + "°";
+});

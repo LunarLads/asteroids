@@ -106,3 +106,16 @@ body {
 .container-fluid {
     padding: 0;
 }
+
+.target-angle-range-text {
+    display: flex;
+    justify-content: space-between;
+}
+
+#angle-ranger {
+    width: 100%;
+}
+
+#diamater-ranger {
+    width: 100%;
+}

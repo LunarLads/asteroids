@@ -1,52 +1,3 @@
-<<<<<<< HEAD
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sample Website</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-</head>
-<body style="background-color: lightgrey;">
-    <!--Sample HTML-->
-    <div class="container-fluid p-0">
-        <header><h2>Lunar Lads Asteroid Simulator</h2></header>
-        <main>
-            <div class="float-start bg-secondary gap-3 my-3 px-3">
-                <h2 class="my-3">Asteroid Launcher Panel</h2>
-                <div class="density my-3">
-                    <h4>Asteroid Density (kg/m³)</h4>
-                    <input type="text">
-                </div>
-                <div class="asteroid-property my-3">
-                    <div class="range">
-                        <h4>Diameter (m)</h4>
-                        <input type="range">
-                    </div>
-                    <div class="velocity my-3">
-                        <h4>Speed (m/s)</h4>
-                        <input type="text">
-                    </div>
-                    <div class="angle-target my-3">
-                        <h4>Angle (0-90°)</h4>
-                        <input type="range">
-                    </div>
-                </div>
-                <div class="asteroid-details" style="text-align: center;">
-                    <h5>Asteroid Details</h5>
-                </div>
-                <div class="launch-asteroid" style="display: flex; justify-content: center;">
-                    <div class="launch-asteroid-btn my-5">
-                        <button type="button" class="btn bg-success p-2 rounded">Launch</button>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-</body>
-=======
 <!DOCTYPE html>
 <html lang="en">
 
@@ -78,7 +29,7 @@
             <div class="asteroid-property my-3">
                 <div class="range">
                     <h4>Diameter (m)</h4>
-                    <input type="range" class="form-range">
+                    <input type="range" class="form-range" id="diamater-ranger">
                 </div>
                 <div class="velocity my-3">
                     <h4>Speed (m/s)</h4>
@@ -86,9 +37,16 @@
                 </div>
                 <div class="angle-target my-3">
                     <h4>Angle (0-90°)</h4>
-                    <input type="range" class="form-range">
+                    </div>
+                    <div class="target-angle-ranger">
+                        <span id="angle-current-value"></span>
+                        <input type="range" class="form-range" id="angle-ranger" min="0" max="90" step="1" value="45">
+                    </div>
+                    <div class="target-angle-range-text">
+                        <span>0°</span>
+                        <span>90°</span>
+                    </div>
                 </div>
-            </div>
             <div class="asteroid-details">
                 <h5>Asteroid Details</h5>
             </div>
@@ -104,5 +62,4 @@
     <script src="script.js"></script>
 </body>
 
->>>>>>> main
 </html>
