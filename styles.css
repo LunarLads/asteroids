@@ -38,3 +38,7 @@
     border-radius: 4px;
     cursor: pointer;
 }
+
+.container-fluid {
+    padding: 0;
+}
