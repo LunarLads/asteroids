@@ -276,7 +276,7 @@ function createCircle(curLat, curLng, radius, tagName, color, fillColor, fillOpa
     const offsetMeters = radius; // adjust as needed
     const metersPerDegLat = 111320; // approximate
     const latOffsetDeg = offsetMeters / metersPerDegLat;
-    const labelLat = curLat - latOffsetDeg * 0.94;
+    const labelLat = curLat - latOffsetDeg * 0.97;
     const labelLng = curLng;//+ latOffsetDeg * 0.8;
 
     L.marker([labelLat, labelLng], { icon: divIcon, interactive: false }).addTo(map);
