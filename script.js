@@ -59,13 +59,13 @@ function shockWaveDecibels(asteroidDiameter, speed, density, impactAngle, radius
     const P = 808 * Math.pow(W ** (1 / 3) / radius, 3);
 
     // convert to dB SPL
-    const dB = 20 * Math.log10(P / P_ref);
+    const db = 20 * Math.log10(P / P_ref);
 
     return {
         energyJoules: E,
         energyTNT: W,
         overpressurePa: P,
-        soundLeveldB: dB
+        db: db
     };
 }
 
@@ -248,13 +248,13 @@ launchBtn.addEventListener('click', () => {
 
     console.log("Crater ", estimateCrater(diameter, speed, angle, density));
 
-    const { soundLevel: soundLeveldB, energyTNT: energyTNT } = shockWaveDecibels(diameter, speed, density, angle, diameter / 2);
+    const { db, energyTNT } = shockWaveDecibels(diameter, speed, density, angle, 40);
 
-    console.log("Shockwave ", shockWaveDecibels(diameter, speed, density, angle, diameter / 2));
+    console.log("Shockwave ", shockWaveDecibels(diameter, speed, density, angle, 40));
 
     asteroidOutputs.setCraterWidth(craterDiameter);
     asteroidOutputs.setCraterDepth(craterDepth);
-    asteroidOutputs.setSoundLevel(soundLeveldB);
+    asteroidOutputs.setSoundLevel(db);
     asteroidOutputs.setEnergyTNT(energyTNT);
 
     L.circle([curLat, curLng], {
