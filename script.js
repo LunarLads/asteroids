@@ -36,6 +36,30 @@ function estimateCrater(asteroidDiameter, speed, impactAngle, density) {
     };
 }
 
+function estimateFireballDiameter(asteroidDiameter, speed, impactAngle, density) {
+    const r = asteroidDiameter / 2;
+    const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
+    const mass = volume * density;
+
+    // effective vertical velocity
+    const theta = (impactAngle * Math.PI) / 180;
+    const vEff = speed * Math.sin(theta);
+
+    // kinetic energy (J)
+    const E = 0.5 * mass * vEff * vEff;
+
+    // fireball diameter scaling (Collins et al.)
+    const k = 0.136; // tuned so 1 km / 30 km/s / ρ=3000 gives ~17.7 km
+    const diameter_m = k * Math.pow(E, 0.25);
+    const diameter_km = diameter_m / 1000;
+
+    return {
+        diameter_m,
+        diameter_km,
+        energy_J: E
+    };
+}
+
 const asteroidInputs = {
     densityEl: document.getElementById('asteroid-density-input'),
     diameterEl: document.getElementById('asteroid-diameter-input'),
@@ -188,30 +212,28 @@ map.on('click', async function (e) {
 // Launch button: place red circle at curLat/curLng with radius 10000
 const launchBtn = document.getElementById('launchBtn');
 
-function createCircle(curLat, curLng, craterDiameter) {
+function createCircle(curLat, curLng, radius, tagName) {
     const circle = L.circle([curLat, curLng], {
         color: 'red',
         fillColor: '#f03',
-        fillOpacity: 0.3,
-        radius: craterDiameter
+        fillOpacity: 0.7,
+        radius: radius
     });
 
     circle.addTo(map);
 
-    // circle.bindPopup('<p>Hello world!<br />This is a nice popup.</p>').openPopup();;
-
     const divIcon = L.divIcon({
         className: '', // keep default wrapper empty
-        html: '<div class="crater-label">crater</div>',
+        html: `<div class="crater-label">${tagName}</div>`,
         iconSize: null
     });
 
-    const offsetMeters = craterDiameter / 4; // adjust as needed
+    const offsetMeters = radius / 2; // adjust as needed
     const metersPerDegLat = 111320; // approximate
     const latOffsetDeg = offsetMeters / metersPerDegLat;
-    const labelLat = curLat - latOffsetDeg;
+    const labelLat = curLat - latOffsetDeg * 0.7;
 
-    craterLabelMarker = L.marker([labelLat, curLng], { icon: divIcon, interactive: false }).addTo(map);
+    L.marker([labelLat, curLng], { icon: divIcon, interactive: false }).addTo(map);
 }
 
 launchBtn.addEventListener('click', () => {
@@ -234,12 +256,11 @@ launchBtn.addEventListener('click', () => {
     asteroidOutputs.setCraterWidth(craterDiameter);
     asteroidOutputs.setCraterDepth(craterDepth);
 
+    createCircle(curLat, curLng, craterDiameter, "crater");
 
-    // Optionally pan to the launch location
+    console.log(estimateFireballDiameter(diameter, speed, angle, density));
+
     map.panTo([curLat, curLng]);
-    // } else {
-    //     alert('No valid launch coordinates set. Click on the map first.');
-    // }
 });
 
 
