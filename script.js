@@ -117,11 +117,53 @@ const asteroidInputs = {
     }
 };
 
+// Compute seismic energy (fraction of total)
+function seismicEnergy(E, density) {
+    if (density >= 7000) f_s = 0.0001;
+    if (density >= 3000) f_s = 0.00015;
+    const f_s = 0.00025;
+    E_seismic = f_s * E
+    return E_seismic;
+};
+
+// Convert to earthquake moment magnitude
+function momentMagnitude(E_seismic) {
+    return (2 / 3) * Math.log10(E_seismic) - 3.2;
+};
+
+// Estimate peak ground acceleration (PGA) at distance R
+function peakGroundAcceleration(E_seismic, R_m, k = 0.5) {
+    return k * Math.pow(E_seismic, 1/3) / R_m; // m/s²
+};
+
+// Run the full calculation and show results
+function asteroidSeismic(diameter, speed, density, f_s, angle) {
+    const r = diameter / 2;
+    const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
+    const mass = volume * density;
+
+    // effective vertical velocity
+    const theta = (angle * Math.PI) / 180;
+    const vEff = speed * Math.sin(theta);
+
+    // kinetic energy (J)
+    const E = 0.5 * mass * vEff * vEff;
+    const E_seismic = seismicEnergy(E, f_s);
+    const Mw = (2 / 3) * Math.log10(E_seismic) - 3.2;
+
+    console.log(`Moment Magnitude (Mw): ${Mw}`);
+
+    return {
+        magnitude: Mw,    
+    };
+};
+
 const asteroidOutputs = {
     widthEl: document.getElementById('result-width'),
     depthEl: document.getElementById('result-depth'),
     soundLevelEl: document.getElementById('result-soundlevel'),
     energyTNTEl: document.getElementById('result-energytnt'),
+    magnitudeEl: document.getElementById('result-magnitude'),
 
     setCraterWidth(value) {
         this.widthEl.textContent = value === undefined || value === null ? '--' : String(value);
@@ -137,6 +179,10 @@ const asteroidOutputs = {
 
     setEnergyTNT(value) {
         this.energyTNTEl.textContent = value === undefined || value === null ? '--' : String(value);
+    },
+
+    setMagnitude(value) {
+        this.magnitudeEl.textContent = value === undefined || value === null ? '--' : String(value);
     },
 };
 
@@ -288,7 +334,7 @@ launchBtn.addEventListener('click', () => {
         map.removeLayer(layer);
     });
 
-    const { density, diameter, speed, angle } = asteroidInputs.getValues();
+    const { density, diameter, speed, angle, E_seismic } = asteroidInputs.getValues();
 
     console.log("Asteroid: ", asteroidInputs.getValues());
 
@@ -300,10 +346,16 @@ launchBtn.addEventListener('click', () => {
 
     console.log("Shockwave ", shockWaveDecibels(diameter, speed, density, angle, 40));
 
+    const { magnitude } = asteroidSeismic(diameter, speed, density, E_seismic, angle);
+
+    console.log("Seismic ", asteroidSeismic(diameter, speed, density, E_seismic, angle));
+
+
     asteroidOutputs.setCraterWidth(craterDiameter);
     asteroidOutputs.setCraterDepth(craterDepth);
-    asteroidOutputs.setSoundLevel(db);
+    asteroidOutputs.setSoundLevel(db);  
     asteroidOutputs.setEnergyTNT(energyTNT);
+    asteroidOutputs.setMagnitude(magnitude);
 
     L.circle([curLat, curLng], {
         color: 'red',
@@ -326,9 +378,7 @@ function calculateAverageElevation() {
     const totalElevation = elevationData.reduce((sum, point) => sum + point.elevation, 0);
     const averageElevation = (totalElevation / elevationData.length).toFixed(2);
     document.getElementById('info').innerHTML += `<br>Average Elevation: ${averageElevation} meters`;
-}
-
-
+};
 
 angle_current_value.innerText = angle_ranger.value + "°";
 
