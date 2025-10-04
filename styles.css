@@ -23,6 +23,8 @@ body {
     margin: 0;
     padding: 0;
     overflow: hidden;
+    font-size: 16px;
+    /* base font size for better readability */
 }
 
 .app-container {
@@ -32,7 +34,8 @@ body {
 }
 
 .map-column {
-    flex: 1 1 70%;
+    /* allow more space for the map; give panel more room */
+    flex: 1 1 60%;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -47,11 +50,15 @@ body {
 }
 
 .panel-column {
-    flex: 0 0 320px;
-    padding: 16px;
-    background: #f8f9fa;
+    /* increased width to make UI larger and more comfortable */
+    flex: 0 0 440px;
+    padding: 20px;
     border-left: 1px solid #ddd;
     overflow-y: auto;
+    background: var(--panel-bg);
+    box-shadow: 0 8px 30px rgba(20, 20, 40, 0.06);
+    border-radius: 14px;
+    border: 1px solid var(--border);
 }
 
 #toggleButton {
@@ -128,10 +135,10 @@ body {
     background: linear-gradient(180deg, #4caf50 0%, #388e3c 100%);
     color: #fff;
     border: none;
-    padding: 12px 28px;
-    font-size: 1rem;
-    border-radius: 10px;
-    box-shadow: 0 6px 18px rgba(56, 142, 60, 0.25);
+    padding: 14px 36px;
+    font-size: 1.05rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 22px rgba(56, 142, 60, 0.28);
     cursor: pointer;
     transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
 }
@@ -155,16 +162,16 @@ body {
 @media (max-width: 600px) {
     #launchBtn {
         width: 100%;
-        padding: 14px 20px;
-        font-size: 1.05rem;
-        border-radius: 8px;
+        padding: 16px 20px;
+        font-size: 1.1rem;
+        border-radius: 10px;
     }
 }
 
 /* Result block styling */
 .launch-result {
     margin-top: 12px;
-    padding: 10px;
+    padding: 14px;
     background: #fff;
     border: 1px solid #e0e0e0;
     border-radius: 6px;
@@ -201,7 +208,7 @@ body {
     padding: 6px 10px;
     border-radius: 4px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 16px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     white-space: nowrap;
     pointer-events: none;
@@ -236,5 +243,76 @@ body {
     60%,
     80% {
         transform: translateX(10px);
+    }
+}
+
+/* Larger UI overrides: increase base type scale and control sizes */
+:root {
+    --ui-scale: 1.12;
+    /* scale factor */
+}
+
+body {
+    font-size: calc(16px * var(--ui-scale));
+}
+
+
+/* Larger headings */
+.panel-column h2 {
+    font-size: 1.4rem;
+}
+
+.panel-column h3 {
+    font-size: 1.15rem;
+}
+
+.coords h4,
+.density h4,
+.asteroid-diameter h4,
+.velocity h4,
+.angle-target h4 {
+    font-size: 1.05rem;
+}
+
+/* Bigger inputs */
+.form-control,
+input.form-control,
+textarea.form-control {
+    font-size: 1.12rem;
+    padding: 12px 14px;
+}
+
+.form-range {
+    height: 44px;
+}
+
+/* Bump button size */
+#launchBtn {
+    font-size: 1.25rem;
+    padding: 16px 40px;
+}
+
+.launch-result h4 {
+    font-size: 1.3rem;
+}
+
+.launch-result div {
+    font-size: 1.12rem;
+}
+
+.crater-label {
+    font-size: 20px;
+    padding: 8px 12px;
+}
+
+@media (max-width: 900px) {
+
+    /* reduce scale slightly on small screens */
+    :root {
+        --ui-scale: 1.02;
+    }
+
+    body {
+        font-size: calc(16px * var(--ui-scale));
     }
 }

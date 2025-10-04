@@ -7,6 +7,7 @@
     <title>2D Earth Map with Elevation Query</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles3.css" />
 </head>
 
 <body>
@@ -15,28 +16,27 @@
             <div id="map"></div>
         </div>
         <aside class="panel-column">
-            <h2>(Name not decided)</h2>
             <h3>Asteroid Launcher Panel</h3>
             <!-- Coordinates display -->
-            <div class="coords my-3">
+            <div class="coords">
                 <h4>Last Click Location</h4>
                 <div>Latitude: <span id="coord-lat">--</span></div>
                 <div>Longitude: <span id="coord-lng">--</span></div>
             </div>
-            <div class="asteroid-property my-3">
-                <div class="density my-3">
+            <div class="asteroid-property">
+                <div class="density">
                     <h4>Asteroid Density (kg/m³)</h4>
                     <input id="asteroid-density-input" type="number" class="form-control" value="3000">
                 </div>
-                <div class="asteroid-diameter my-3">
+                <div class="asteroid-diameter">
                     <h4>Diameter (m)</h4>
                     <input id="asteroid-diameter-input" type="number" class="form-control" value="1000">
                 </div>
-                <div class="velocity my-3">
+                <div class="velocity">
                     <h4>Speed (m/s)</h4>
                     <input id="asteroid-speed-input" type="number" class="form-control" value="30000">
                 </div>
-                <div class="angle-target my-3">
+                <div class="angle-target">
                     <h4>Angle (0-90°)</h4>
                 </div>
                 <div class="target-angle-ranger">
