@@ -1,4 +1,7 @@
 // Initialize the map
+
+
+
 const map = L.map('map').setView([0, 0], 2);
 
 // Base map layer (OpenStreetMap)
@@ -70,24 +73,74 @@ async function getElevation(lat, lng) {
 // });
 
 
+const latSpan = document.getElementById('coord-lat');
+const lngSpan = document.getElementById('coord-lng');
+
+let curLat = 0;
+let curLng = 0;
+
+updateCoords = function (lat, lng) {
+    if (!latSpan || !lngSpan) return;
+    curLat = lat;
+    curLng = lng;
+    const fLat = Number(lat).toFixed(2);
+    const fLng = Number(lng).toFixed(2);
+    latSpan.textContent = fLat;
+    lngSpan.textContent = fLng;
+};
+
+let asteroidMarker = null;
+
 map.on('click', async function (e) {
-    const lat = e.latlng.lat.toFixed(4);
-    const lng = e.latlng.lng.toFixed(4);
+    const lat = e.latlng.lat;
+    const lng = e.latlng.lng;
     // Add a red circle with radius 300 meters at the clicked location
-    L.circle([lat, lng], {
-        color: 'red',
-        fillColor: '#f03',
-        fillOpacity: 0.3,
-        radius: 10000
-    }).addTo(map);
-    // Also add a blue circle with radius 15000 meters
-    L.circle([lat, lng], {
-        color: 'blue',
-        fillColor: '#30f',
-        fillOpacity: 0.15,
-        radius: 15000
-    }).addTo(map);
+
+    updateCoords(lat, lng);
+
+    if (asteroidMarker === null) {
+        asteroidMarker = L.marker([lat, lng]);
+        asteroidMarker.addTo(map);
+    }
+    else {
+        asteroidMarker.setLatLng(L.latLng(lat, lng));
+    }
+
+    // L.circle([lat, lng], {
+    //     color: 'red',
+    //     fillColor: '#f03',
+    //     fillOpacity: 0.3,
+    //     radius: 10000
+    // }).addTo(map);
 });
+
+// Launch button: place red circle at curLat/curLng with radius 10000
+const launchBtn = document.getElementById('launchBtn');
+if (launchBtn) {
+    launchBtn.addEventListener('click', () => {
+        console.log("Coords:" + curLat + " " + curLng);
+
+        map.eachLayer(function (layer) {
+            if (layer instanceof L.TileLayer) return; // keep tiles
+            if (layer instanceof L.Marker && layer === asteroidMarker) return;
+            map.removeLayer(layer);
+        });
+
+        L.circle([curLat, curLng], {
+            color: 'red',
+            fillColor: '#f03',
+            fillOpacity: 0.3,
+            radius: 10000
+        }).addTo(map);
+        // Optionally pan to the launch location
+        map.panTo([curLat, curLng]);
+        // } else {
+        //     alert('No valid launch coordinates set. Click on the map first.');
+        // }
+    });
+}
+
+
 
 // Function to calculate average elevation
 function calculateAverageElevation() {
