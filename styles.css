@@ -151,6 +151,24 @@ body {
     }
 }
 
+/* Result block styling */
+.launch-result {
+    margin-top: 12px;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+}
+
+.launch-result h4 {
+    margin: 0 0 8px 0;
+    font-size: 1.05rem;
+}
+
+.launch-result div {
+    margin: 4px 0;
+}
+
 .target-angle-range-text {
     display: flex;
     justify-content: space-between;

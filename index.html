@@ -28,37 +28,44 @@
                 <div>Latitude: <span id="coord-lat">--</span></div>
                 <div>Longitude: <span id="coord-lng">--</span></div>
             </div>
-            <div class="density my-3">
-                <h4>Asteroid Density (kg/m³)</h4>
-                <input type="text" class="form-control">
-            </div>
             <div class="asteroid-property my-3">
+                <div class="density my-3">
+                    <h4>Asteroid Density (kg/m³)</h4>
+                    <input id="asteroid-density-input" type="number" class="form-control">
+                </div>
                 <div class="asteroid-diameter my-3">
                     <h4>Diameter (m)</h4>
-                    <input type="text" class="form-control">
+                    <input id="asteroid-diameter-input" type="number" class="form-control">
                 </div>
                 <div class="velocity my-3">
                     <h4>Speed (m/s)</h4>
-                    <input type="text" class="form-control">
+                    <input id="asteroid-speed-input" type="number" class="form-control">
                 </div>
                 <div class="angle-target my-3">
                     <h4>Angle (0-90°)</h4>
-                    </div>
-                    <div class="target-angle-ranger">
-                        <span id="angle-current-value"></span>
-                        <input type="range" class="form-range" id="angle-ranger" min="0" max="90" step="1" value="45">
-                    </div>
-                    <div class="target-angle-range-text">
-                        <span>0°</span>
-                        <span>90°</span>
-                    </div>
                 </div>
+                <div class="target-angle-ranger">
+                    <span id="angle-current-value"></span>
+                    <input type="range" class="form-range" id="angle-ranger" min="0" max="90" step="1" value="45">
+                </div>
+                <div class="target-angle-range-text">
+                    <span>0°</span>
+                    <span>90°</span>
+                </div>
+            </div>
             <div class="asteroid-details">
                 <h5>Asteroid Details</h5>
             </div>
             <div class="launch-asteroid">
                 <div class="launch-asteroid-btn my-5" style="display: flex; justify-content: center;">
                     <button id="launchBtn" class="btn btn-success">Launch</button>
+                </div>
+                <!-- Result block: shows crater result after launch -->
+                <div class="launch-result my-3">
+                    <h4>Result</h4>
+                    <h5 class="mt-2">Crater</h5>
+                    <div>Width: <span id="result-width">--</span> m</div>
+                    <div>Depth: <span id="result-depth">--</span> m</div>
                 </div>
             </div>
         </aside>

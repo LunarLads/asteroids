@@ -1,6 +1,77 @@
 // Initialize the map
 
+const angle_ranger = document.getElementById('angle-ranger');
+const angle_current_value = document.getElementById('angle-current-value');
 
+function estimateCrater(asteroidDiameter, speed, impactAngle, density) {
+    const g = 9.81; // gravity m/s²
+    const targetDensity = 2500; // rock density kg/m³
+
+    // Convert angle to radians
+    const theta = (impactAngle * Math.PI) / 180;
+
+    // Effective velocity component
+    const vEffective = speed * Math.sin(theta);
+
+    // Scaling law exponents (from Holsapple/Melosh)
+    const mu = 0.22;
+    const alpha = 0.78;
+    const beta = 0.44;
+    const k1 = 1.161;
+
+    // Final crater diameter (m)
+    const finalDiameter =
+        k1 *
+        Math.pow(g, -mu) *
+        Math.pow(density / targetDensity, 1 / 3) *
+        Math.pow(asteroidDiameter, alpha) *
+        Math.pow(vEffective, beta);
+
+    // Depth ~ 1/3 of diameter (gravity regime)
+    let depth = finalDiameter / 3;
+
+    return {
+        diameter: finalDiameter,
+        depth: depth
+    };
+}
+
+const asteroidInputs = {
+    densityEl: document.getElementById('asteroid-density-input'),
+    diameterEl: document.getElementById('asteroid-diameter-input'),
+    speedEl: document.getElementById('asteroid-speed-input'),
+    angleEl: angle_ranger,
+
+    // parse element value to number (NaN if missing/invalid)
+    _toNumber(el) {
+        if (!el) return NaN;
+        const v = el.value?.trim();
+        return v === undefined || v === '' ? NaN : Number(v);
+    },
+
+    // return current values as numbers
+    getValues() {
+        return {
+            density: this._toNumber(this.densityEl),
+            diameter: this._toNumber(this.diameterEl),
+            speed: this._toNumber(this.speedEl),
+            angle: this._toNumber(this.angleEl)
+        };
+    }
+};
+
+const asteroidOutputs = {
+    widthEl: document.getElementById('result-width'),
+    depthEl: document.getElementById('result-depth'),
+
+    setCraterWidth(value) {
+        this.widthEl.textContent = value === undefined || value === null ? '--' : String(value);
+    },
+
+    setCraterDepth(value) {
+        this.depthEl.textContent = value === undefined || value === null ? '--' : String(value);
+    }
+};
 
 const map = L.map('map').setView([0, 0], 2);
 
@@ -116,29 +187,39 @@ map.on('click', async function (e) {
 
 // Launch button: place red circle at curLat/curLng with radius 10000
 const launchBtn = document.getElementById('launchBtn');
-if (launchBtn) {
-    launchBtn.addEventListener('click', () => {
-        console.log("Coords:" + curLat + " " + curLng);
 
-        map.eachLayer(function (layer) {
-            if (layer instanceof L.TileLayer) return; // keep tiles
-            if (layer instanceof L.Marker && layer === asteroidMarker) return;
-            map.removeLayer(layer);
-        });
+launchBtn.addEventListener('click', () => {
+    console.log("Coords:" + curLat + " " + curLng);
 
-        L.circle([curLat, curLng], {
-            color: 'red',
-            fillColor: '#f03',
-            fillOpacity: 0.3,
-            radius: 10000
-        }).addTo(map);
-        // Optionally pan to the launch location
-        map.panTo([curLat, curLng]);
-        // } else {
-        //     alert('No valid launch coordinates set. Click on the map first.');
-        // }
+    map.eachLayer(function (layer) {
+        if (layer instanceof L.TileLayer) return; // keep tiles
+        if (layer instanceof L.Marker && layer === asteroidMarker) return;
+        map.removeLayer(layer);
     });
-}
+
+    const { density, diameter, speed, angle } = asteroidInputs.getValues();
+
+    console.log("Asteroid: ", asteroidInputs.getValues());
+
+    const { diameter: craterDiameter, depth: craterDepth } = estimateCrater(diameter, speed, angle, density);
+
+    console.log("Crater ", estimateCrater(diameter, speed, angle, density));
+
+    asteroidOutputs.setCraterWidth(craterDiameter);
+    asteroidOutputs.setCraterDepth(craterDepth);
+
+    L.circle([curLat, curLng], {
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.3,
+        radius: craterDiameter
+    }).addTo(map);
+    // Optionally pan to the launch location
+    map.panTo([curLat, curLng]);
+    // } else {
+    //     alert('No valid launch coordinates set. Click on the map first.');
+    // }
+});
 
 
 
@@ -153,10 +234,10 @@ function calculateAverageElevation() {
     document.getElementById('info').innerHTML += `<br>Average Elevation: ${averageElevation} meters`;
 }
 
-const angle_ranger = document.getElementById('angle-ranger');
-const angle_current_value = document.getElementById('angle-current-value');
+
+
 angle_current_value.innerText = angle_ranger.value + "°";
 
 angle_ranger.addEventListener('input', () => {
-  angle_current_value.textContent = angle_ranger.value + "°";
+    angle_current_value.textContent = angle_ranger.value + "°";
 });
