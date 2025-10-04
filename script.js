@@ -188,6 +188,32 @@ map.on('click', async function (e) {
 // Launch button: place red circle at curLat/curLng with radius 10000
 const launchBtn = document.getElementById('launchBtn');
 
+function createCircle(curLat, curLng, craterDiameter) {
+    const circle = L.circle([curLat, curLng], {
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.3,
+        radius: craterDiameter
+    });
+
+    circle.addTo(map);
+
+    // circle.bindPopup('<p>Hello world!<br />This is a nice popup.</p>').openPopup();;
+
+    const divIcon = L.divIcon({
+        className: '', // keep default wrapper empty
+        html: '<div class="crater-label">crater</div>',
+        iconSize: null
+    });
+
+    const offsetMeters = craterDiameter / 4; // adjust as needed
+    const metersPerDegLat = 111320; // approximate
+    const latOffsetDeg = offsetMeters / metersPerDegLat;
+    const labelLat = curLat - latOffsetDeg;
+
+    craterLabelMarker = L.marker([labelLat, curLng], { icon: divIcon, interactive: false }).addTo(map);
+}
+
 launchBtn.addEventListener('click', () => {
     console.log("Coords:" + curLat + " " + curLng);
 
@@ -208,12 +234,7 @@ launchBtn.addEventListener('click', () => {
     asteroidOutputs.setCraterWidth(craterDiameter);
     asteroidOutputs.setCraterDepth(craterDepth);
 
-    L.circle([curLat, curLng], {
-        color: 'red',
-        fillColor: '#f03',
-        fillOpacity: 0.3,
-        radius: craterDiameter
-    }).addTo(map);
+
     // Optionally pan to the launch location
     map.panTo([curLat, curLng]);
     // } else {

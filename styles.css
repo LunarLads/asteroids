@@ -181,3 +181,26 @@ body {
 #diamater-ranger {
     width: 100%;
 }
+
+.crater-label {
+    position: relative;
+    left: -50%;
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    white-space: nowrap;
+    pointer-events: none;
+    /* don't capture mouse events */
+    transform: translateY(2px);
+    /* small nudge visual */
+}
+
+/* ensure label appears above circle tiles */
+.leaflet-marker-pane .crater-label {
+    z-index: 650;
+}
