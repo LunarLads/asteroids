@@ -36,6 +36,39 @@ function estimateCrater(asteroidDiameter, speed, impactAngle, density) {
     };
 }
 
+function shockWaveDecibels(asteroidDiameter, speed, density, impactAngle, radius) {
+    // constants
+    const P_ref = 20e-6; // reference pressure (Pa)
+    const TNT_J = 4.184e9; // joules per ton TNT
+
+    // asteroid properties
+    const r = asteroidDiameter / 2;
+    const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
+    const mass = volume * density;
+
+    // effective velocity (account for impact angle, vertical=90°)
+    const vEffective = speed * Math.sin((impactAngle * Math.PI) / 180);
+
+    // kinetic energy (Joules)
+    const E = 0.5 * mass * Math.pow(vEffective, 2);
+
+    // TNT equivalent (tons)
+    const W = E / TNT_J;
+
+    // peak overpressure at radius (Pa), cube law approximation
+    const P = 808 * Math.pow(W ** (1 / 3) / radius, 3);
+
+    // convert to dB SPL
+    const db = 20 * Math.log10(P / P_ref);
+
+    return {
+        energyJoules: E,
+        energyTNT: W,
+        overpressurePa: P,
+        db: db
+    };
+}
+
 function estimateFireballDiameter(asteroidDiameter, speed, impactAngle, density) {
     const r = asteroidDiameter / 2;
     const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
@@ -87,6 +120,8 @@ const asteroidInputs = {
 const asteroidOutputs = {
     widthEl: document.getElementById('result-width'),
     depthEl: document.getElementById('result-depth'),
+    soundLevelEl: document.getElementById('result-soundlevel'),
+    energyTNTEl: document.getElementById('result-energytnt'),
 
     setCraterWidth(value) {
         this.widthEl.textContent = value === undefined || value === null ? '--' : String(value);
@@ -94,7 +129,15 @@ const asteroidOutputs = {
 
     setCraterDepth(value) {
         this.depthEl.textContent = value === undefined || value === null ? '--' : String(value);
-    }
+    },
+
+    setSoundLevel(value) {
+        this.soundLevelEl.textContent = value === undefined || value === null ? '--' : String(value);
+    },
+
+    setEnergyTNT(value) {
+        this.energyTNTEl.textContent = value === undefined || value === null ? '--' : String(value);
+    },
 };
 
 const map = L.map('map').setView([0, 0], 2);
@@ -253,13 +296,22 @@ launchBtn.addEventListener('click', () => {
 
     console.log("Crater ", estimateCrater(diameter, speed, angle, density));
 
+    const { db, energyTNT } = shockWaveDecibels(diameter, speed, density, angle, 40);
+
+    console.log("Shockwave ", shockWaveDecibels(diameter, speed, density, angle, 40));
+
     asteroidOutputs.setCraterWidth(craterDiameter);
     asteroidOutputs.setCraterDepth(craterDepth);
+    asteroidOutputs.setSoundLevel(db);
+    asteroidOutputs.setEnergyTNT(energyTNT);
 
-    createCircle(curLat, curLng, craterDiameter, "crater");
-
-    console.log(estimateFireballDiameter(diameter, speed, angle, density));
-
+    L.circle([curLat, curLng], {
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.3,
+        radius: craterDiameter
+    }).addTo(map);
+    // Optionally pan to the launch location
     map.panTo([curLat, curLng]);
 });
 
@@ -283,3 +335,5 @@ angle_current_value.innerText = angle_ranger.value + "°";
 angle_ranger.addEventListener('input', () => {
     angle_current_value.textContent = angle_ranger.value + "°";
 });
+
+
