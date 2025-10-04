@@ -204,42 +204,6 @@ function toggleMap() {
 // Array to store coordinate-elevation data
 let elevationData = [];
 
-// Function to fetch elevation from Open-Elevation API
-async function getElevation(lat, lng) {
-    const url = `https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`;
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data.results && data.results.length > 0) {
-            return data.results[0].elevation;
-        } else {
-            return null;
-        }
-    } catch (error) {
-        console.error('Error fetching elevation:', error);
-        return null;
-    }
-}
-
-// // Handle map click to get coordinates and elevation
-// map.on('click', async function (e) {
-//     const lat = e.latlng.lat.toFixed(4);
-//     const lng = e.latlng.lng.toFixed(4);
-//     const elevation = await getElevation(lat, lng);
-//     if (elevation !== null) {
-//         elevationData.push({ lat, lng, elevation });
-//         const infoDiv = document.getElementById('info');
-//         infoDiv.innerHTML = `Latitude: ${lat}<br>Longitude: ${lng}<br>Elevation: ${elevation} meters<br>Total points: ${elevationData.length}`;
-//         // Add a marker at the clicked location
-//         L.marker([lat, lng]).addTo(map)
-//             .bindPopup(`Lat: ${lat}, Lng: ${lng}<br>Elevation: ${elevation} m`)
-//             .openPopup();
-//     } else {
-//         document.getElementById('info').innerHTML = 'Error fetching elevation data.';
-//     }
-// });
-
-
 const latSpan = document.getElementById('coord-lat');
 const lngSpan = document.getElementById('coord-lng');
 
