@@ -1,12 +1,53 @@
+/* App layout */
+
+/* 1. Use a more-intuitive box-sizing model */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* 2. Remove default margin and ensure full-height layout */
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+}
+
+.map-column {
+    flex: 1 1 70%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Let the map take remaining vertical space inside the map column */
 #map {
-    height: 1400px;
+    flex: 1 1 auto;
     width: 100%;
+    min-height: 0;
+    /* allow flex child to shrink properly */
+}
+
+.panel-column {
+    flex: 0 0 320px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-left: 1px solid #ddd;
+    overflow-y: auto;
 }
 
 #toggleButton {
     position: absolute;
     top: 10px;
-    left: 10px;
+    left: 50px;
     z-index: 1000;
     padding: 10px;
     background-color: white;
@@ -17,8 +58,8 @@
 
 #info {
     position: absolute;
-    top: 50px;
-    left: 10px;
+    top: 55px;
+    left: 50px;
     z-index: 1000;
     padding: 10px;
     background-color: white;
@@ -30,13 +71,36 @@
 #calcButton {
     position: absolute;
     top: 10px;
-    left: 150px;
+    left: 200px;
     z-index: 1000;
     padding: 10px;
     background-color: white;
     border: 2px solid #333;
     border-radius: 4px;
     cursor: pointer;
+}
+
+.map-buttons {
+    margin-left: 50px;
+}
+
+/* Responsive: stack on small screens */
+@media (max-width: 900px) {
+    .app-container {
+        flex-direction: column;
+    }
+
+    .panel-column {
+        border-left: none;
+        border-top: 1px solid #ddd;
+        width: 100%;
+        flex: none;
+        height: 40vh;
+    }
+
+    #map {
+        height: 60vh;
+    }
 }
 
 .container-fluid {

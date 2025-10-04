@@ -51,22 +51,42 @@ async function getElevation(lat, lng) {
     }
 }
 
-// Handle map click to get coordinates and elevation
+// // Handle map click to get coordinates and elevation
+// map.on('click', async function (e) {
+//     const lat = e.latlng.lat.toFixed(4);
+//     const lng = e.latlng.lng.toFixed(4);
+//     const elevation = await getElevation(lat, lng);
+//     if (elevation !== null) {
+//         elevationData.push({ lat, lng, elevation });
+//         const infoDiv = document.getElementById('info');
+//         infoDiv.innerHTML = `Latitude: ${lat}<br>Longitude: ${lng}<br>Elevation: ${elevation} meters<br>Total points: ${elevationData.length}`;
+//         // Add a marker at the clicked location
+//         L.marker([lat, lng]).addTo(map)
+//             .bindPopup(`Lat: ${lat}, Lng: ${lng}<br>Elevation: ${elevation} m`)
+//             .openPopup();
+//     } else {
+//         document.getElementById('info').innerHTML = 'Error fetching elevation data.';
+//     }
+// });
+
+
 map.on('click', async function (e) {
     const lat = e.latlng.lat.toFixed(4);
     const lng = e.latlng.lng.toFixed(4);
-    const elevation = await getElevation(lat, lng);
-    if (elevation !== null) {
-        elevationData.push({ lat, lng, elevation });
-        const infoDiv = document.getElementById('info');
-        infoDiv.innerHTML = `Latitude: ${lat}<br>Longitude: ${lng}<br>Elevation: ${elevation} meters<br>Total points: ${elevationData.length}`;
-        // Add a marker at the clicked location
-        L.marker([lat, lng]).addTo(map)
-            .bindPopup(`Lat: ${lat}, Lng: ${lng}<br>Elevation: ${elevation} m`)
-            .openPopup();
-    } else {
-        document.getElementById('info').innerHTML = 'Error fetching elevation data.';
-    }
+    // Add a red circle with radius 300 meters at the clicked location
+    L.circle([lat, lng], {
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.3,
+        radius: 10000
+    }).addTo(map);
+    // Also add a blue circle with radius 15000 meters
+    L.circle([lat, lng], {
+        color: 'blue',
+        fillColor: '#30f',
+        fillOpacity: 0.15,
+        radius: 15000
+    }).addTo(map);
 });
 
 // Function to calculate average elevation
