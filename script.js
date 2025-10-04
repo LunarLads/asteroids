@@ -248,6 +248,15 @@ map.on('click', async function (e) {
 // Launch button: place red circle at curLat/curLng with radius 10000
 const launchBtn = document.getElementById('launchBtn');
 
+launchBtn.addEventListener('click', function () {
+    document.body.classList.add('shake');
+
+    // Remove the class after animation ends to reset
+    setTimeout(() => {
+        document.body.classList.remove('shake');
+    }, 1000); // Matches the animation duration
+});
+
 function createCircle(curLat, curLng, radius, tagName, color, fillColor, fillOpacity) {
     const circle = L.circle([curLat, curLng], {
         color: color,
@@ -318,10 +327,6 @@ launchBtn.addEventListener('click', () => {
         {
             "name": "Eardrums Rupture",
             "psi": 5
-        },
-        {
-            "name": "Homes Destructions",
-            "psi": 4
         }
     ];
 

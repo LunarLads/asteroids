@@ -7,12 +7,22 @@
     box-sizing: border-box;
 }
 
+
+
+/* Apply the shake to the body when the 'shake' class is added */
+body.shake {
+    animation: shake 0.5s ease-in-out;
+    animation-iteration-count: 2;
+}
+
+
 /* 2. Remove default margin and ensure full-height layout */
 html,
 body {
     height: 100%;
     margin: 0;
     padding: 0;
+    overflow: hidden;
 }
 
 .app-container {
@@ -203,4 +213,28 @@ body {
 /* ensure label appears above circle tiles */
 .leaflet-marker-pane .crater-label {
     z-index: 650;
+}
+
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-10px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(10px);
+    }
 }
