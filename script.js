@@ -36,38 +36,67 @@ function estimateCrater(asteroidDiameter, speed, impactAngle, density) {
     };
 }
 
+// todo make this function more percise
 function shockWaveDecibels(asteroidDiameter, speed, density, impactAngle, radius) {
     // constants
     const P_ref = 20e-6; // reference pressure (Pa)
-    const TNT_J = 4.184e9; // joules per ton TNT
+    const J_PER_KG = 4.184e6; // joules per kg of TNT
+    const PSI_TO_PA = 6895; // psi -> Pa conversion
 
     // asteroid properties
-    const r = asteroidDiameter / 2;
-    const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
+    const rAst = asteroidDiameter / 2;
+    const volume = (4 / 3) * Math.PI * Math.pow(rAst, 3);
     const mass = volume * density;
 
-    // effective velocity (account for impact angle, vertical=90°)
-    const vEffective = speed * Math.sin((impactAngle * Math.PI) / 180);
+    // vertical component of velocity
+    const theta = (impactAngle * Math.PI) / 180;
+    const vEff = speed * Math.sin(theta);
 
-    // kinetic energy (Joules)
-    const E = 0.5 * mass * Math.pow(vEffective, 2);
+    // kinetic energy (J)
+    const E = 0.5 * mass * vEff * vEff;
 
-    // TNT equivalent (tons)
-    const W = E / TNT_J;
+    // TNT equivalent (kilotons)
+    const W = E / J_PER_KG;
 
-    // peak overpressure at radius (Pa), cube law approximation
-    const P = 808 * Math.pow(W ** (1 / 3) / radius, 3);
+    // scaled distance
+    const Z = radius / Math.cbrt(W);
+
+    const P = (1772 / (Z ** 3) + 114 / (Z ** 2) + 10.4 / Z) * 1000;
+
+    // peak overpressure in psi
+    const P_psi = P / 6894;
 
     // convert to dB SPL
     const db = 20 * Math.log10(P / P_ref);
 
     return {
         energyJoules: E,
-        energyTNT: W,
+        energyTNT_kilotons: W,
         overpressurePa: P,
+        psi: P_psi,
         db: db
     };
 }
+
+function getShockWaves(asteroidDiameter, speed, density, impactAngle) {
+    const res = [];
+    let distance = 1;
+    while (res.length == 0 || res[res.length - 1].psi > 3.8) {
+
+        const shochWave = shockWaveDecibels(asteroidDiameter, speed, density, impactAngle, distance * 1000);
+        res.push(
+            {
+                distance,
+                db: shochWave.db,
+                psi: shochWave.psi
+            }
+        );
+        distance++;
+    }
+
+    return res;
+}
+
 
 function estimateFireballDiameter(asteroidDiameter, speed, impactAngle, density) {
     const r = asteroidDiameter / 2;
@@ -255,11 +284,11 @@ map.on('click', async function (e) {
 // Launch button: place red circle at curLat/curLng with radius 10000
 const launchBtn = document.getElementById('launchBtn');
 
-function createCircle(curLat, curLng, radius, tagName) {
+function createCircle(curLat, curLng, radius, tagName, color, fillColor, fillOpacity) {
     const circle = L.circle([curLat, curLng], {
-        color: 'red',
-        fillColor: '#f03',
-        fillOpacity: 0.7,
+        color: color,
+        fillColor: fillColor,
+        fillOpacity: fillOpacity,
         radius: radius
     });
 
@@ -271,12 +300,13 @@ function createCircle(curLat, curLng, radius, tagName) {
         iconSize: null
     });
 
-    const offsetMeters = radius / 2; // adjust as needed
+    const offsetMeters = radius; // adjust as needed
     const metersPerDegLat = 111320; // approximate
     const latOffsetDeg = offsetMeters / metersPerDegLat;
-    const labelLat = curLat - latOffsetDeg * 0.7;
+    const labelLat = curLat - latOffsetDeg * 0.94;
+    const labelLng = curLng;//+ latOffsetDeg * 0.8;
 
-    L.marker([labelLat, curLng], { icon: divIcon, interactive: false }).addTo(map);
+    L.marker([labelLat, labelLng], { icon: divIcon, interactive: false }).addTo(map);
 }
 
 launchBtn.addEventListener('click', () => {
@@ -305,30 +335,72 @@ launchBtn.addEventListener('click', () => {
     asteroidOutputs.setSoundLevel(db);
     asteroidOutputs.setEnergyTNT(energyTNT);
 
-    L.circle([curLat, curLng], {
-        color: 'red',
-        fillColor: '#f03',
-        fillOpacity: 0.3,
-        radius: craterDiameter
-    }).addTo(map);
+
+    createCircle(curLat, curLng, craterDiameter, "crater", "red", "red", 0.5);
+
+    thresholds = [
+        {
+            "name": "99% fatal",
+            "psi": 70
+        },
+        {
+            "name": "Severe Lung damage",
+            "psi": 30
+        },
+        {
+            "name": "Buildings Destruction",
+            "psi": 10
+        },
+        {
+            "name": "Eardrums Rupture",
+            "psi": 5
+        },
+        {
+            "name": "Homes Destructions",
+            "psi": 4
+        }
+    ];
+
+
+    schockWavePerDistance = getShockWaves(diameter, speed, density, angle);
+
+    thresholds_upd = assignThresholdDistances(thresholds, schockWavePerDistance);
+    console.log("Db per distance: ", schockWavePerDistance);
+
+    console.log("Thr Upd ", thresholds_upd);
+
+    thresholds_upd.forEach(obj => {
+        createCircle(curLat, curLng, obj.distance * 1000, obj.name, "blue", "#34bbc9", 0.15);
+    });
+
+
     // Optionally pan to the launch location
     map.panTo([curLat, curLng]);
 });
 
 
+/**
+ * For each threshold object adds a `distance` property.
+ * distance = first shockWavePerDistance entry.distance where entry.psi >= threshold.psi
+ * If no match found, distance is set to null.
+ *
+ * @param {Array<object>} thresholdsArr  - array of threshold objects ({name, psi, ...})
+ * @param {Array<object>} shockArr       - array of shock entries ({distance, db, psi, ...})
+ * @returns {Array<object>} the mutated thresholdsArr
+ */
+function assignThresholdDistances(thresholdsArr, shockArr) {
 
-// Function to calculate average elevation
-function calculateAverageElevation() {
-    if (elevationData.length === 0) {
-        document.getElementById('info').innerHTML = 'No elevation data collected.';
-        return;
-    }
-    const totalElevation = elevationData.reduce((sum, point) => sum + point.elevation, 0);
-    const averageElevation = (totalElevation / elevationData.length).toFixed(2);
-    document.getElementById('info').innerHTML += `<br>Average Elevation: ${averageElevation} meters`;
+    thresholdsArr = [...thresholdsArr];
+
+    if (!Array.isArray(thresholdsArr) || !Array.isArray(shockArr)) return thresholdsArr;
+
+    thresholdsArr.forEach(th => {
+        const match = shockArr.find(s => Number(th.psi) >= Number(s.psi));
+        th.distance = match ? match.distance : null;
+    });
+
+    return thresholdsArr;
 }
-
-
 
 angle_current_value.innerText = angle_ranger.value + "°";
 
