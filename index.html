@@ -33,9 +33,14 @@
                 <input type="text" class="form-control">
             </div>
             <div class="asteroid-property my-3">
-                <div class="range">
+                <div class="asteroid-diameter my-3">
                     <h4>Diameter (m)</h4>
-                    <input type="range" class="form-range" id="diamater-ranger">
+                    <span id="diameter-current-value"></span>
+                    <input type="range" class="form-range" id="diamater-ranger" min="0" max="100" step="0.01">
+                    <div class="target-angle-range-text">
+                        <span>0 km</span>
+                        <span>100 km</span>
+                    </div>
                 </div>
                 <div class="velocity my-3">
                     <h4>Speed (m/s)</h4>

@@ -153,6 +153,14 @@ function calculateAverageElevation() {
     document.getElementById('info').innerHTML += `<br>Average Elevation: ${averageElevation} meters`;
 }
 
+const diameter_ranger = document.getElementById('diamater-ranger');
+const diameter_current_value = document.getElementById('diameter-current-value');
+diameter_current_value.innerText = diameter_ranger.value + " km";
+
+diameter_ranger.addEventListener('input', () => {
+  diameter_current_value.textContent = diameter_ranger.value + " km";
+});
+
 const angle_ranger = document.getElementById('angle-ranger');
 const angle_current_value = document.getElementById('angle-current-value');
 angle_current_value.innerText = angle_ranger.value + "°";
