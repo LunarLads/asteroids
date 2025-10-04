@@ -1,174 +1,4 @@
 // Initialize the map
-
-const angle_ranger = document.getElementById('angle-ranger');
-const angle_current_value = document.getElementById('angle-current-value');
-
-function estimateCrater(asteroidDiameter, speed, impactAngle, density) {
-    const g = 9.81; // gravity m/s²
-    const targetDensity = 2500; // rock density kg/m³
-
-    // Convert angle to radians
-    const theta = (impactAngle * Math.PI) / 180;
-
-    // Effective velocity component
-    const vEffective = speed * Math.sin(theta);
-
-    // Scaling law exponents (from Holsapple/Melosh)
-    const mu = 0.22;
-    const alpha = 0.78;
-    const beta = 0.44;
-    const k1 = 1.161;
-
-    // Final crater diameter (m)
-    const finalDiameter =
-        k1 *
-        Math.pow(g, -mu) *
-        Math.pow(density / targetDensity, 1 / 3) *
-        Math.pow(asteroidDiameter, alpha) *
-        Math.pow(vEffective, beta);
-
-    // Depth ~ 1/3 of diameter (gravity regime)
-    let depth = finalDiameter / 3;
-
-    return {
-        diameter: finalDiameter,
-        depth: depth
-    };
-}
-
-// todo make this function more percise
-function shockWaveDecibels(asteroidDiameter, speed, density, impactAngle, radius) {
-    // constants
-    const P_ref = 20e-6; // reference pressure (Pa)
-    const J_PER_KG = 4.184e6; // joules per kg of TNT
-    const PSI_TO_PA = 6895; // psi -> Pa conversion
-
-    // asteroid properties
-    const rAst = asteroidDiameter / 2;
-    const volume = (4 / 3) * Math.PI * Math.pow(rAst, 3);
-    const mass = volume * density;
-
-    // vertical component of velocity
-    const theta = (impactAngle * Math.PI) / 180;
-    const vEff = speed * Math.sin(theta);
-
-    // kinetic energy (J)
-    const E = 0.5 * mass * vEff * vEff;
-
-    // TNT equivalent (kilotons)
-    const W = E / J_PER_KG;
-
-    // scaled distance
-    const Z = radius / Math.cbrt(W);
-
-    const P = (1772 / (Z ** 3) + 114 / (Z ** 2) + 10.4 / Z) * 1000;
-
-    // peak overpressure in psi
-    const P_psi = P / 6894;
-
-    // convert to dB SPL
-    const db = 20 * Math.log10(P / P_ref);
-
-    return {
-        energyJoules: E,
-        energyTNT_kilotons: W,
-        overpressurePa: P,
-        psi: P_psi,
-        db: db
-    };
-}
-
-function getShockWaves(asteroidDiameter, speed, density, impactAngle) {
-    const res = [];
-    let distance = 1;
-    while (res.length == 0 || res[res.length - 1].psi > 3.8) {
-
-        const shochWave = shockWaveDecibels(asteroidDiameter, speed, density, impactAngle, distance * 1000);
-        res.push(
-            {
-                distance,
-                db: shochWave.db,
-                psi: shochWave.psi
-            }
-        );
-        distance++;
-    }
-
-    return res;
-}
-
-
-function estimateFireballDiameter(asteroidDiameter, speed, impactAngle, density) {
-    const r = asteroidDiameter / 2;
-    const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
-    const mass = volume * density;
-
-    // effective vertical velocity
-    const theta = (impactAngle * Math.PI) / 180;
-    const vEff = speed * Math.sin(theta);
-
-    // kinetic energy (J)
-    const E = 0.5 * mass * vEff * vEff;
-
-    // fireball diameter scaling (Collins et al.)
-    const k = 0.136; // tuned so 1 km / 30 km/s / ρ=3000 gives ~17.7 km
-    const diameter_m = k * Math.pow(E, 0.25);
-    const diameter_km = diameter_m / 1000;
-
-    return {
-        diameter_m,
-        diameter_km,
-        energy_J: E
-    };
-}
-
-const asteroidInputs = {
-    densityEl: document.getElementById('asteroid-density-input'),
-    diameterEl: document.getElementById('asteroid-diameter-input'),
-    speedEl: document.getElementById('asteroid-speed-input'),
-    angleEl: angle_ranger,
-
-    // parse element value to number (NaN if missing/invalid)
-    _toNumber(el) {
-        if (!el) return NaN;
-        const v = el.value?.trim();
-        return v === undefined || v === '' ? NaN : Number(v);
-    },
-
-    // return current values as numbers
-    getValues() {
-        return {
-            density: this._toNumber(this.densityEl),
-            diameter: this._toNumber(this.diameterEl),
-            speed: this._toNumber(this.speedEl),
-            angle: this._toNumber(this.angleEl)
-        };
-    }
-};
-
-const asteroidOutputs = {
-    widthEl: document.getElementById('result-width'),
-    depthEl: document.getElementById('result-depth'),
-    soundLevelEl: document.getElementById('result-soundlevel'),
-    energyTNTEl: document.getElementById('result-energytnt'),
-
-    setCraterWidth(value) {
-        this.widthEl.textContent = value === undefined || value === null ? '--' : String(value);
-    },
-
-    setCraterDepth(value) {
-        this.depthEl.textContent = value === undefined || value === null ? '--' : String(value);
-    },
-
-    setSoundLevel(value) {
-        this.soundLevelEl.textContent = value === undefined || value === null ? '--' : String(value);
-    },
-
-    setEnergyTNT(value) {
-        this.energyTNTEl.textContent = value === undefined || value === null ? '--' : String(value);
-    },
-};
-
 const map = L.map('map').setView([0, 0], 2);
 
 // Base map layer (OpenStreetMap)
@@ -186,8 +16,261 @@ const reliefMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
 // Add base map by default
 baseMap.addTo(map);
 
-// Toggle between base and relief maps
+// Map state
 let isRelief = false;
+let elevationData = [];
+let asteroidMarker = null;
+let impactCircles = [];
+let craterLabels = [];
+
+// Global variables for current coordinates
+let curLat = 0;
+let curLng = 0;
+
+// DOM Elements
+const angle_ranger = document.getElementById('angle-ranger');
+const angle_current_value = document.getElementById('angle-current-value');
+const latSpan = document.getElementById('coord-lat');
+const lngSpan = document.getElementById('coord-lng');
+const launchBtn = document.getElementById('launchBtn');
+
+// Initialize angle display and indicator
+function initializeAngleIndicator() {
+    const angle = angle_ranger.value;
+    angle_current_value.textContent = angle + "°";
+    
+    // Update the angle line indicator position
+    const indicator = document.getElementById('angle-line-indicator');
+    if (indicator) {
+        const percentage = (angle / 90) * 100;
+        indicator.style.left = percentage + '%';
+    }
+}
+
+// Impact calculation functions
+function estimateCrater(asteroidDiameter, speed, impactAngle, density) {
+    const g = 9.81; // gravity m/s²
+    const targetDensity = 2500; // rock density kg/m³
+
+    // Convert angle to radians
+    const theta = (impactAngle * Math.PI) / 180;
+
+    // Effective velocity component
+    const vEffective = speed * Math.sin(theta);
+
+    // Scaling law exponents (from Holsapple/Melosh)
+    const mu = 0.22;
+    const alpha = 0.78;
+    const beta = 0.44;
+    const k1 = 1.161;
+
+    // Final crater diameter (m)
+    const finalDiameter = k1 *
+        Math.pow(g, -mu) *
+        Math.pow(density / targetDensity, 1 / 3) *
+        Math.pow(asteroidDiameter, alpha) *
+        Math.pow(vEffective, beta);
+
+    // Depth ~ 1/3 of diameter (gravity regime)
+    const depth = finalDiameter / 3;
+
+    return {
+        diameter: finalDiameter,
+        depth: depth
+    };
+}
+
+function shockWaveDecibels(asteroidDiameter, speed, density, impactAngle, radius) {
+    const P_ref = 20e-6; // reference pressure (Pa)
+    const TNT_J = 4.184e9; // joules per ton TNT
+
+    // asteroid properties
+    const r = asteroidDiameter / 2;
+    const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
+    const mass = volume * density;
+
+    // effective velocity (account for impact angle, vertical=90°)
+    const vEffective = speed * Math.sin((impactAngle * Math.PI) / 180);
+
+    // kinetic energy (Joules)
+    const E = 0.5 * mass * Math.pow(vEffective, 2);
+
+    // TNT equivalent (tons)
+    const W = E / TNT_J;
+
+    // peak overpressure at radius (Pa), cube law approximation
+    const P = 808 * Math.pow(Math.pow(W, 1/3) / radius, 3);
+
+    // convert to dB SPL
+    const db = 20 * Math.log10(P / P_ref);
+
+    return {
+        energyJoules: E,
+        energyTNT: W,
+        overpressurePa: P,
+        db: db
+    };
+}
+
+function estimateFireballDiameter(asteroidDiameter, speed, impactAngle, density) {
+    const r = asteroidDiameter / 2;
+    const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
+    const mass = volume * density;
+
+    // effective vertical velocity
+    const theta = (impactAngle * Math.PI) / 180;
+    const vEff = speed * Math.sin(theta);
+
+    // kinetic energy (J)
+    const E = 0.5 * mass * Math.pow(vEff, 2);
+
+    // fireball diameter scaling (Collins et al.)
+    const k = 0.136;
+    const diameter_m = k * Math.pow(E, 0.25);
+    const diameter_km = diameter_m / 1000;
+
+    return {
+        diameter_m,
+        diameter_km,
+        energy_J: E
+    };
+}
+
+function asteroidImpactFullDecay(diameter, density, velocity, overpressure, maxDistanceKm = 100) {
+    // 1. Asteroid mass (spherical)
+    const radius = diameter / 2;
+    const volume = (4 / 3) * Math.PI * Math.pow(radius, 3);
+    const mass = density * volume;
+
+    // 2. Kinetic energy
+    const kineticEnergy = 0.5 * mass * Math.pow(velocity, 2);
+
+    // 3. Shock wave wind speed at epicenter
+    const airDensity = 1.225; // kg/m³
+    const windSpeed = Math.sqrt((2 * overpressure) / airDensity);
+    const windSpeedKmh = windSpeed * 3.6;
+
+    // 4. Wind decay with distance (each kilometer)
+    const r0 = 1000; // base distance 1 km
+    const alpha = 0.5; // decay coefficient
+    const windDecay = [];
+
+    for (let km = 1; km <= maxDistanceKm; km++) {
+        const r = km * 1000; // convert to meters
+        const v = windSpeed * Math.pow(r0 / r, alpha);
+        windDecay.push({ 
+            distanceKm: km, 
+            windSpeed: v, 
+            windSpeedKmh: v * 3.6 
+        });
+    }
+
+    return {
+        mass,
+        kineticEnergy,
+        windSpeed,
+        windSpeedKmh,
+        windDecay
+    };
+}
+
+// Asteroid Inputs Manager
+const asteroidInputs = {
+    densityEl: document.getElementById('asteroid-density-input'),
+    diameterEl: document.getElementById('asteroid-diameter-input'),
+    speedEl: document.getElementById('asteroid-speed-input'),
+    angleEl: angle_ranger,
+
+    _toNumber(el) {
+        if (!el) return NaN;
+        const v = el.value?.trim();
+        return v === undefined || v === '' ? NaN : Number(v);
+    },
+
+    getValues() {
+        return {
+            density: this._toNumber(this.densityEl),
+            diameter: this._toNumber(this.diameterEl),
+            speed: this._toNumber(this.speedEl),
+            angle: this._toNumber(this.angleEl)
+        };
+    },
+
+    validateValues() {
+        const values = this.getValues();
+        const errors = [];
+        
+        if (isNaN(values.density) || values.density < 1000 || values.density > 8000) {
+            errors.push('Density must be between 1000 and 8000 kg/m³');
+        }
+        if (isNaN(values.diameter) || values.diameter < 10 || values.diameter > 100000) {
+            errors.push('Diameter must be between 10 and 100,000 meters');
+        }
+        if (isNaN(values.speed) || values.speed < 1000 || values.speed > 100000) {
+            errors.push('Speed must be between 1000 and 100,000 m/s');
+        }
+        if (isNaN(values.angle) || values.angle < 0 || values.angle > 90) {
+            errors.push('Angle must be between 0 and 90 degrees');
+        }
+        
+        return { isValid: errors.length === 0, errors };
+    }
+};
+
+// Asteroid Outputs Manager
+const asteroidOutputs = {
+    widthEl: document.getElementById('result-width'),
+    depthEl: document.getElementById('result-depth'),
+    soundLevelEl: document.getElementById('result-soundlevel'),
+    energyTNTEl: document.getElementById('result-energytnt'),
+
+    setCraterWidth(value) {
+        this._setValue(this.widthEl, value, 'm');
+    },
+
+    setCraterDepth(value) {
+        this._setValue(this.depthEl, value, 'm');
+    },
+
+    setSoundLevel(value) {
+        this._setValue(this.soundLevelEl, value, 'dB');
+    },
+
+    setEnergyTNT(value) {
+        this._setValue(this.energyTNTEl, value, 'tons');
+    },
+
+    _setValue(element, value, unit = '') {
+        if (value === undefined || value === null || isNaN(value)) {
+            element.textContent = '--';
+            return;
+        }
+        
+        let formattedValue;
+        if (value >= 1e12) {
+            formattedValue = (value / 1e12).toFixed(2) + 'T';
+        } else if (value >= 1e9) {
+            formattedValue = (value / 1e9).toFixed(2) + 'B';
+        } else if (value >= 1e6) {
+            formattedValue = (value / 1e6).toFixed(2) + 'M';
+        } else if (value >= 1e3) {
+            formattedValue = (value / 1e3).toFixed(2) + 'k';
+        } else {
+            formattedValue = value.toFixed(2);
+        }
+        
+        element.textContent = `${formattedValue} ${unit}`;
+    },
+
+    clearResults() {
+        this.setCraterWidth(null);
+        this.setCraterDepth(null);
+        this.setSoundLevel(null);
+        this.setEnergyTNT(null);
+    }
+};
+
+// Map Functions
 function toggleMap() {
     if (isRelief) {
         map.removeLayer(reliefMap);
@@ -201,175 +284,232 @@ function toggleMap() {
     isRelief = !isRelief;
 }
 
-// Array to store coordinate-elevation data
-let elevationData = [];
+// Function to fetch elevation from Open-Elevation API
+async function getElevation(lat, lng) {
+    const url = `https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`;
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+            return data.results[0].elevation;
+        } else {
+            return null;
+        }
+    } catch (error) {
+        console.error('Error fetching elevation:', error);
+        return null;
+    }
+}
 
-const latSpan = document.getElementById('coord-lat');
-const lngSpan = document.getElementById('coord-lng');
-
-let curLat = 0;
-let curLng = 0;
-
-updateCoords = function (lat, lng) {
+function updateCoords(lat, lng) {
     if (!latSpan || !lngSpan) return;
     curLat = lat;
     curLng = lng;
-    const fLat = Number(lat).toFixed(2);
-    const fLng = Number(lng).toFixed(2);
+    const fLat = Number(lat).toFixed(4);
+    const fLng = Number(lng).toFixed(4);
     latSpan.textContent = fLat;
     lngSpan.textContent = fLng;
-};
+}
 
-let asteroidMarker = null;
+function createCraterLabel(lat, lng, text, radius) {
+    const divIcon = L.divIcon({
+        className: 'crater-label',
+        html: `<div class="crater-label-text">${text}</div>`,
+        iconSize: [100, 20]
+    });
+
+    // Position label slightly above the crater
+    const offsetMeters = radius * 0.6;
+    const metersPerDegLat = 111320;
+    const latOffsetDeg = offsetMeters / metersPerDegLat;
+    const labelLat = lat - latOffsetDeg;
+
+    const label = L.marker([labelLat, lng], { 
+        icon: divIcon, 
+        interactive: false 
+    }).addTo(map);
+    
+    craterLabels.push(label);
+    return label;
+}
+
+function clearPreviousImpact() {
+    // Remove previous impact circles
+    impactCircles.forEach(circle => {
+        map.removeLayer(circle);
+    });
+    impactCircles = [];
+
+    // Remove previous crater labels
+    craterLabels.forEach(label => {
+        map.removeLayer(label);
+    });
+    craterLabels = [];
+}
+
+// Event Listeners
+angle_ranger.addEventListener('input', () => {
+    const angle = angle_ranger.value;
+    angle_current_value.textContent = angle + "°";
+    
+    // Update the angle line indicator position
+    const indicator = document.getElementById('angle-line-indicator');
+    if (indicator) {
+        const percentage = (angle / 90) * 100;
+        indicator.style.left = percentage + '%';
+    }
+});
 
 map.on('click', async function (e) {
     const lat = e.latlng.lat;
     const lng = e.latlng.lng;
-    // Add a red circle with radius 300 meters at the clicked location
 
     updateCoords(lat, lng);
 
-    if (asteroidMarker === null) {
-        asteroidMarker = L.marker([lat, lng]);
-        asteroidMarker.addTo(map);
-    }
-    else {
-        asteroidMarker.setLatLng(L.latLng(lat, lng));
+    // Get elevation data
+    const elevation = await getElevation(lat, lng);
+    const infoDiv = document.getElementById('info');
+    if (elevation !== null) {
+        elevationData.push({ lat, lng, elevation });
+        infoDiv.innerHTML = `📍 Location: ${lat.toFixed(4)}, ${lng.toFixed(4)}<br>🏔️ Elevation: ${elevation.toFixed(0)} meters`;
+    } else {
+        infoDiv.innerHTML = '📍 Location set<br>⚠️ Could not fetch elevation data';
     }
 
-    // L.circle([lat, lng], {
-    //     color: 'red',
-    //     fillColor: '#f03',
-    //     fillOpacity: 0.3,
-    //     radius: 10000
-    // }).addTo(map);
+    // Update or create asteroid marker
+    if (asteroidMarker === null) {
+        asteroidMarker = L.marker([lat, lng], {
+            icon: L.divIcon({
+                className: 'asteroid-marker',
+                html: '☄️',
+                iconSize: [30, 30]
+            })
+        }).addTo(map);
+    } else {
+        asteroidMarker.setLatLng([lat, lng]);
+    }
 });
 
-// Launch button: place red circle at curLat/curLng with radius 10000
-const launchBtn = document.getElementById('launchBtn');
-
-function createCircle(curLat, curLng, radius, tagName, color, fillColor, fillOpacity) {
-    const circle = L.circle([curLat, curLng], {
-        color: color,
-        fillColor: fillColor,
-        fillOpacity: fillOpacity,
-        radius: radius
-    });
-
-    circle.addTo(map);
-
-    const divIcon = L.divIcon({
-        className: '', // keep default wrapper empty
-        html: `<div class="crater-label">${tagName}</div>`,
-        iconSize: null
-    });
-
-    const offsetMeters = radius; // adjust as needed
-    const metersPerDegLat = 111320; // approximate
-    const latOffsetDeg = offsetMeters / metersPerDegLat;
-    const labelLat = curLat - latOffsetDeg * 0.94;
-    const labelLng = curLng;//+ latOffsetDeg * 0.8;
-
-    L.marker([labelLat, labelLng], { icon: divIcon, interactive: false }).addTo(map);
-}
-
 launchBtn.addEventListener('click', () => {
-    console.log("Coords:" + curLat + " " + curLng);
+    // Validate coordinates
+    if (curLat === 0 && curLng === 0) {
+        alert('Please select an impact location on the map first!');
+        return;
+    }
 
-    map.eachLayer(function (layer) {
-        if (layer instanceof L.TileLayer) return; // keep tiles
-        if (layer instanceof L.Marker && layer === asteroidMarker) return;
-        map.removeLayer(layer);
-    });
+    // Validate inputs
+    const validation = asteroidInputs.validateValues();
+    if (!validation.isValid) {
+        alert('Please fix the following errors:\n' + validation.errors.join('\n'));
+        return;
+    }
 
     const { density, diameter, speed, angle } = asteroidInputs.getValues();
 
-    console.log("Asteroid: ", asteroidInputs.getValues());
+    console.log("Asteroid Parameters:", { density, diameter, speed, angle });
+    console.log("Impact Location:", { curLat, curLng });
 
-    const { diameter: craterDiameter, depth: craterDepth } = estimateCrater(diameter, speed, angle, density);
+    // Calculate impact effects
+    const crater = estimateCrater(diameter, speed, angle, density);
+    const shockwave = shockWaveDecibels(diameter, speed, density, angle, 40);
+    const fireball = estimateFireballDiameter(diameter, speed, angle, density);
+    const windDecay = asteroidImpactFullDecay(diameter, density, speed, shockwave.overpressurePa, 100);
 
-    console.log("Crater ", estimateCrater(diameter, speed, angle, density));
+    console.log("Crater:", crater);
+    console.log("Shockwave:", shockwave);
+    console.log("Fireball:", fireball);
+    console.log("Wind Decay:", windDecay);
 
-    const { db, energyTNT } = shockWaveDecibels(diameter, speed, density, angle, 40);
+    // Update UI with results
+    asteroidOutputs.setCraterWidth(crater.diameter);
+    asteroidOutputs.setCraterDepth(crater.depth);
+    asteroidOutputs.setSoundLevel(shockwave.db);
+    asteroidOutputs.setEnergyTNT(shockwave.energyTNT);
 
-    console.log("Shockwave ", shockWaveDecibels(diameter, speed, density, angle, 40));
+    // Clear previous impact visualization
+    clearPreviousImpact();
 
-    asteroidOutputs.setCraterWidth(craterDiameter);
-    asteroidOutputs.setCraterDepth(craterDepth);
-    asteroidOutputs.setSoundLevel(db);
-    asteroidOutputs.setEnergyTNT(energyTNT);
+    // Create crater visualization
+    const craterCircle = L.circle([curLat, curLng], {
+        color: '#e74c3c',
+        fillColor: '#c0392b',
+        fillOpacity: 0.3,
+        radius: crater.diameter / 2
+    }).addTo(map);
 
+    impactCircles.push(craterCircle);
 
-    createCircle(curLat, curLng, craterDiameter, "crater", "red", "red", 0.5);
+    // Create crater label
+    createCraterLabel(curLat, curLng, `Crater: ${(crater.diameter / 1000).toFixed(2)} km`, crater.diameter / 2);
 
-    thresholds = [
-        {
-            "name": "99% fatal",
-            "psi": 70
-        },
-        {
-            "name": "Severe Lung damage",
-            "psi": 30
-        },
-        {
-            "name": "Buildings Destruction",
-            "psi": 10
-        },
-        {
-            "name": "Eardrums Rupture",
-            "psi": 5
-        },
-        {
-            "name": "Homes Destructions",
-            "psi": 4
-        }
-    ];
+    // Create fireball visualization (if significant)
+    if (fireball.diameter_km > 1) {
+        const fireballCircle = L.circle([curLat, curLng], {
+            color: '#f39c12',
+            fillColor: '#f1c40f',
+            fillOpacity: 0.2,
+            radius: fireball.diameter_m / 2
+        }).addTo(map);
 
+        impactCircles.push(fireballCircle);
+        createCraterLabel(curLat, curLng, `Fireball: ${fireball.diameter_km.toFixed(2)} km`, fireball.diameter_m / 2);
+    }
 
-    schockWavePerDistance = getShockWaves(diameter, speed, density, angle);
-
-    thresholds_upd = assignThresholdDistances(thresholds, schockWavePerDistance);
-    console.log("Db per distance: ", schockWavePerDistance);
-
-    console.log("Thr Upd ", thresholds_upd);
-
-    thresholds_upd.forEach(obj => {
-        createCircle(curLat, curLng, obj.distance * 1000, obj.name, "blue", "#34bbc9", 0.15);
-    });
-
-
-    // Optionally pan to the launch location
+    // Pan to impact location
     map.panTo([curLat, curLng]);
+
+    // Update info with impact summary
+    const infoDiv = document.getElementById('info');
+    infoDiv.innerHTML = `💥 Impact simulated!<br>
+                        🕳️ Crater: ${(crater.diameter / 1000).toFixed(2)} km diameter<br>
+                        💣 Energy: ${(shockwave.energyTNT / 1e6).toFixed(1)} megatons TNT`;
 });
 
-
-/**
- * For each threshold object adds a `distance` property.
- * distance = first shockWavePerDistance entry.distance where entry.psi >= threshold.psi
- * If no match found, distance is set to null.
- *
- * @param {Array<object>} thresholdsArr  - array of threshold objects ({name, psi, ...})
- * @param {Array<object>} shockArr       - array of shock entries ({distance, db, psi, ...})
- * @returns {Array<object>} the mutated thresholdsArr
- */
-function assignThresholdDistances(thresholdsArr, shockArr) {
-
-    thresholdsArr = [...thresholdsArr];
-
-    if (!Array.isArray(thresholdsArr) || !Array.isArray(shockArr)) return thresholdsArr;
-
-    thresholdsArr.forEach(th => {
-        const match = shockArr.find(s => Number(th.psi) >= Number(s.psi));
-        th.distance = match ? match.distance : null;
-    });
-
-    return thresholdsArr;
+function calculateAverageElevation() {
+    if (elevationData.length === 0) {
+        document.getElementById('info').innerHTML = 'No elevation data collected. Click on the map first.';
+        return;
+    }
+    
+    const totalElevation = elevationData.reduce((sum, point) => sum + point.elevation, 0);
+    const averageElevation = (totalElevation / elevationData.length).toFixed(2);
+    
+    document.getElementById('info').innerHTML += `<br>📊 Average Elevation: ${averageElevation} meters (${elevationData.length} points)`;
 }
 
-angle_current_value.innerText = angle_ranger.value + "°";
-
-angle_ranger.addEventListener('input', () => {
-    angle_current_value.textContent = angle_ranger.value + "°";
+// Initialize the application
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize angle indicator
+    initializeAngleIndicator();
+    
+    // Add custom CSS for crater labels and markers
+    const style = document.createElement('style');
+    style.textContent = `
+        .crater-label-text {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .asteroid-marker {
+            background: transparent;
+            border: none;
+        }
+        .angle-line-indicator {
+            position: absolute;
+            top: -8px;
+            width: 3px;
+            height: 20px;
+            background: #2c3e50;
+            transform: translateX(-50%);
+            transition: left 0.3s ease;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    console.log('Asteroid Impact Simulator initialized');
 });
-
-
