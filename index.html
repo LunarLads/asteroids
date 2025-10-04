@@ -4,74 +4,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D Earth Map with Elevation Query</title>
+    <title>Asteroid Impact Simulator</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c2461, #1e3799);
+            color: #333;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .map-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .map-buttons {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        #map {
+            flex: 1;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .panel-column {
+            width: 400px;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            overflow-y: auto;
+        }
+
+        h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        h3, h4, h5 {
+            color: #34495e;
+        }
+
+        .coords, .asteroid-property, .launch-result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            border: 2px solid #bdc3c7;
+            border-radius: 6px;
+            padding: 10px;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .target-angle-ranger {
+            padding: 10px 0;
+        }
+
+        .form-range {
+            width: 100%;
+        }
+
+        .target-angle-range-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        #angle-current-value {
+            font-weight: bold;
+            color: #e74c3c;
+            font-size: 1.1em;
+        }
+
+        #launchBtn {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 25px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        #launchBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        }
+
+        .launch-result {
+            background: linear-gradient(135deg, #fff, #ecf0f1);
+            border-left-color: #27ae60;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn-group button {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .btn-group button:hover,
+        .btn-group button.active {
+            background: #3498db;
+            color: white;
+        }
+
+        #info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f4fc;
+            border-radius: 5px;
+            border-left: 3px solid #3498db;
+        }
+
+        .result-value {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+    </style>
 </head>
 
 <body>
     <div class="app-container">
         <div class="map-column">
             <div class="map-buttons">
-                <button id="toggleButton" onclick="toggleMap()">Toggle Relief Map</button>
-                <button id="calcButton" onclick="calculateAverageElevation()">Calculate Average Elevation</button>
-                <div id="info">Click on the map to get elevation data.</div>
+                <div class="btn-group">
+                    <button id="toggleButton" onclick="toggleMap()">Toggle Relief Map</button>
+                    <button id="calcButton" onclick="calculateAverageElevation()">Average Elevation</button>
+                </div>
+                <div id="info">Click anywhere on the map to select impact location</div>
             </div>
             <div id="map"></div>
         </div>
+        
         <aside class="panel-column">
-            <h2>(Name not decided)</h2>
-            <h3>Asteroid Launcher Panel</h3>
+            <h2>🌍 Asteroid Impact Simulator</h2>
+            <h3>Impact Parameters</h3>
+            
             <!-- Coordinates display -->
-            <div class="coords my-3">
-                <h4>Last Click Location</h4>
-                <div>Latitude: <span id="coord-lat">--</span></div>
-                <div>Longitude: <span id="coord-lng">--</span></div>
+            <div class="coords">
+                <h4>📍 Impact Location</h4>
+                <div><strong>Latitude:</strong> <span id="coord-lat">--</span>°</div>
+                <div><strong>Longitude:</strong> <span id="coord-lng">--</span>°</div>
             </div>
-            <div class="asteroid-property my-3">
-                <div class="density my-3">
-                    <h4>Asteroid Density (kg/m³)</h4>
-                    <input id="asteroid-density-input" type="number" class="form-control">
+
+            <!-- Asteroid Properties -->
+            <div class="asteroid-property">
+                <h4>⚡ Asteroid Properties</h4>
+                
+                <div class="density mb-3">
+                    <label class="form-label"><strong>Density</strong> (kg/m³)</label>
+                    <input id="asteroid-density-input" type="number" class="form-control" value="3000" min="1000" max="8000">
                 </div>
-                <div class="asteroid-diameter my-3">
-                    <h4>Diameter (m)</h4>
-                    <input id="asteroid-diameter-input" type="number" class="form-control">
+                
+                <div class="asteroid-diameter mb-3">
+                    <label class="form-label"><strong>Diameter</strong> (meters)</label>
+                    <input id="asteroid-diameter-input" type="number" class="form-control" value="1000" min="10" max="100000">
                 </div>
-                <div class="velocity my-3">
-                    <h4>Speed (m/s)</h4>
-                    <input id="asteroid-speed-input" type="number" class="form-control">
+                
+                <div class="velocity mb-3">
+                    <label class="form-label"><strong>Impact Velocity</strong> (m/s)</label>
+                    <input id="asteroid-speed-input" type="number" class="form-control" value="30000" min="1000" max="100000">
                 </div>
-                <div class="angle-target my-3">
-                    <h4>Angle (0-90°)</h4>
-                </div>
-                <div class="target-angle-ranger">
-                    <span id="angle-current-value"></span>
-                    <input type="range" class="form-range" id="angle-ranger" min="0" max="90" step="1" value="45">
-                </div>
+                
+               <!-- Replace this section in your HTML -->
+<div class="angle-target mb-3">
+    <label class="form-label"><strong>Impact Angle</strong></label>
+    <div class="d-flex justify-content-between align-items-center">
+        <span id="angle-current-value" class="fs-5">45°</span>
+        <span class="text-muted">(0° = grazing, 90° = vertical)</span>
+    </div>
+</div>
+
+<!-- Add this angle line visualization -->
+<div class="angle-line-container">
+    <div class="angle-line">
+        <div class="angle-line-indicator" id="angle-line-indicator" style="left: 50%;"></div>
+    </div>
+    <div class="angle-line-labels">
+        <span>0° (Grazing)</span>
+        <span>45°</span>
+        <span>90° (Vertical)</span>
+    </div>
+</div>
+
+<div class="target-angle-ranger">
+    <input type="range" class="form-range" id="angle-ranger" min="0" max="90" step="1" value="45">
+</div>
+
+
+
                 <div class="target-angle-range-text">
                     <span>0°</span>
                     <span>90°</span>
                 </div>
             </div>
-            <div class="asteroid-details">
-                <h5>Asteroid Details</h5>
-            </div>
+
+            <!-- Launch Button -->
             <div class="launch-asteroid">
-                <div class="launch-asteroid-btn my-5" style="display: flex; justify-content: center;">
-                    <button id="launchBtn" class="btn btn-success">Launch</button>
+                <div class="launch-asteroid-btn">
+                    <button id="launchBtn" class="btn btn-success btn-lg">
+                        🚀 LAUNCH ASTEROID
+                    </button>
                 </div>
-                <!-- Result block: shows crater result after launch -->
-                <div class="launch-result my-3">
-                    <h4>Result</h4>
-                    <h5 class="mt-2">Crater</h5>
-                    <div>Width: <span id="result-width">--</span> m</div>
-                    <div>Depth: <span id="result-depth">--</span> m</div>
+
+                <!-- Results -->
+                <div class="launch-result">
+                    <h4>📊 Impact Results</h4>
+                    
+                    <h5 class="mt-3">🕳️ Crater Dimensions</h5>
+                    <div>Width: <span id="result-width" class="result-value">--</span> m</div>
+                    <div>Depth: <span id="result-depth" class="result-value">--</span> m</div>
+                    
+                    <h5 class="mt-3">💥 Blast Effects</h5>
+                    <div>Sound Level: <span id="result-soundlevel" class="result-value">--</span> dB</div>
+                    <div>Energy (TNT equivalent): <span id="result-energytnt" class="result-value">--</span> tons</div>
                 </div>
             </div>
         </aside>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script.js"></script>
 </body>
 

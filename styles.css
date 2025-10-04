@@ -1,183 +1,66 @@
-/* App layout */
+/* Fix header white line */
+h2 {
+    border-bottom: 3px solid #3498db;
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
 
-/* 1. Use a more-intuitive box-sizing model */
-*,
-*::before,
-*::after {
+/* Impact angle line styling */
+.angle-line-container {
+    margin: 15px 0;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.angle-line {
+    position: relative;
+    height: 4px;
+    background: linear-gradient(90deg, #e74c3c, #3498db);
+    border-radius: 2px;
+    margin: 10px 0;
+    overflow: visible;
+}
+
+.angle-line-indicator {
+    position: absolute;
+    top: -8px;
+    width: 3px;
+    height: 20px;
+    background: #2c3e50;
+    transform: translateX(-50%);
+    transition: left 0.3s ease;
+}
+
+.angle-line-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 0.8em;
+    color: #7f8c8d;
+}
+
+.angle-line-labels span {
+    font-weight: bold;
+}
+
+/* Remove any unwanted white lines */
+.app-container::before,
+.panel-column::before {
+    display: none;
+}
+
+/* Ensure no extra borders */
+* {
     box-sizing: border-box;
 }
 
-/* 2. Remove default margin and ensure full-height layout */
-html,
-body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-}
-
-.app-container {
-    display: flex;
-    flex-direction: row;
-    height: 100vh;
-}
-
-.map-column {
-    flex: 1 1 70%;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Let the map take remaining vertical space inside the map column */
-#map {
-    flex: 1 1 auto;
-    width: 100%;
-    min-height: 0;
-    /* allow flex child to shrink properly */
-}
-
-.panel-column {
-    flex: 0 0 320px;
-    padding: 16px;
-    background: #f8f9fa;
-    border-left: 1px solid #ddd;
-    overflow-y: auto;
-}
-
-#toggleButton {
-    position: absolute;
-    top: 10px;
-    left: 50px;
-    z-index: 1000;
-    padding: 10px;
-    background-color: white;
-    border: 2px solid #333;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-#info {
-    position: absolute;
-    top: 55px;
-    left: 50px;
-    z-index: 1000;
-    padding: 10px;
-    background-color: white;
-    border: 2px solid #333;
-    border-radius: 4px;
-    max-width: 300px;
-}
-
-#calcButton {
-    position: absolute;
-    top: 10px;
-    left: 200px;
-    z-index: 1000;
-    padding: 10px;
-    background-color: white;
-    border: 2px solid #333;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.map-buttons {
-    margin-left: 50px;
-}
-
-/* Responsive: stack on small screens */
-@media (max-width: 900px) {
-    .app-container {
-        flex-direction: column;
-    }
-
-    .panel-column {
-        border-left: none;
-        border-top: 1px solid #ddd;
-        width: 100%;
-        flex: none;
-        height: 40vh;
-    }
-
-    #map {
-        height: 60vh;
-    }
-}
-
-.container-fluid {
-    padding: 0;
-}
-
-/* Launch button styling */
-.launch-asteroid-btn {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#launchBtn {
-    background: linear-gradient(180deg, #4caf50 0%, #388e3c 100%);
-    color: #fff;
-    border: none;
-    padding: 12px 28px;
-    font-size: 1rem;
-    border-radius: 10px;
-    box-shadow: 0 6px 18px rgba(56, 142, 60, 0.25);
-    cursor: pointer;
-    transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
-}
-
-#launchBtn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 22px rgba(56, 142, 60, 0.32);
-}
-
-#launchBtn:active {
-    transform: translateY(0);
-    box-shadow: 0 6px 12px rgba(56, 142, 60, 0.2);
-}
-
-#launchBtn:focus {
-    outline: 3px solid rgba(76, 175, 80, 0.25);
-    outline-offset: 2px;
-}
-
-/* Small screens: full-width button */
-@media (max-width: 600px) {
-    #launchBtn {
-        width: 100%;
-        padding: 14px 20px;
-        font-size: 1.05rem;
-        border-radius: 8px;
-    }
-}
-
-/* Result block styling */
-.launch-result {
-    margin-top: 12px;
-    padding: 10px;
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-}
-
-.launch-result h4 {
-    margin: 0 0 8px 0;
-    font-size: 1.05rem;
-}
-
-.launch-result div {
-    margin: 4px 0;
-}
-
-.target-angle-range-text {
-    display: flex;
-    justify-content: space-between;
-}
-
-#angle-ranger {
-    width: 100%;
-}
-
-#diamater-ranger {
-    width: 100%;
+body::before,
+body::after {
+    display: none;
 }
