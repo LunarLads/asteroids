@@ -139,6 +139,55 @@ async function calculateDustPopulation(lat, lng, dustData) {
   return await getPopulationInSquare(lat, lng, radiusMeters);
 }
 
+// Function to format large numbers into human-readable format
+function formatNumber(num) {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + ' million';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + ' thousand';
+  } else {
+    return num.toFixed(0);
+  }
+}
+
+// Function to calculate evacuation costs
+function evacuationCost(population, radiusKm) {
+  // === Base parameters for a radius of 150 km ===
+
+  let buses = population / 40;
+
+  // === Average fuel consumption (liters/100 km) ===
+  const fuelUse = 30;
+
+  // === Prices ===
+  const fuelPrice = 1.67;      // €/liter
+  const rationPrice = 6;
+
+  // === Round-trip distance ===
+  const distance = radiusKm;
+
+  // === Total fuel consumption (liters) ===
+  const totalLiters = buses * fuelUse * distance / 100;
+
+  // === Cost of fuel and rations ===
+  const fuelCost = totalLiters * fuelPrice;
+  const foodCost = population * rationPrice * 30;
+  const totalCost = fuelCost + foodCost;
+  const costPerPerson = totalCost / population;
+
+  // === Return data ===
+  return {
+    population,
+    radiusKm,
+    buses: Math.round(buses),
+    fuelLiters: totalLiters.toFixed(2),
+    fuelCost: fuelCost.toFixed(2),
+    foodCost: foodCost.toFixed(2),
+    totalCost: totalCost.toFixed(2),
+    costPerPerson: costPerPerson.toFixed(2)
+  };
+}
+
 const angle_ranger = document.getElementById('angle-ranger');
 const angle_current_value = document.getElementById('angle-current-value');
 
@@ -455,6 +504,12 @@ const asteroidOutputs = {
   shockwavePopulationEl: document.getElementById('result-shockwave-population'),
   earthquakePopulationEl: document.getElementById('result-earthquake-population'),
   dustPopulationEl: document.getElementById('result-dust-population'),
+  evacuationPopulationEl: document.getElementById('evacuation-population'),
+  evacuationFuelEl: document.getElementById('evacuation-fuel'),
+  evacuationFuelCostEl: document.getElementById('evacuation-fuel-cost'),
+  evacuationFoodCostEl: document.getElementById('evacuation-food-cost'),
+  evacuationTotalCostEl: document.getElementById('evacuation-total-cost'),
+  evacuationCostPerPersonEl: document.getElementById('evacuation-cost-per-person'),
 
   setCraterWidth(value) {
     this.widthEl.textContent = value === undefined || value === null ? '--' : String(value.toFixed(2));
@@ -518,6 +573,41 @@ const asteroidOutputs = {
 
   setDustPopulation(value) {
     this.dustPopulationEl.textContent = value === undefined || value === null ? '--' : value.toLocaleString();
+  },
+
+  setEvacuationPopulation(value) {
+    this.evacuationPopulationEl.textContent = value === undefined || value === null ? '--' : value.toLocaleString();
+  },
+
+  setEvacuationFuel(value) {
+    if (value === undefined || value === null) {
+      this.evacuationFuelEl.textContent = '--';
+    } else {
+      const num = parseFloat(value);
+      if (num >= 1000000) {
+        this.evacuationFuelEl.textContent = (num / 1000000).toFixed(1) + ' million';
+      } else if (num >= 1000) {
+        this.evacuationFuelEl.textContent = (num / 1000).toFixed(1) + ' thousand';
+      } else {
+        this.evacuationFuelEl.textContent = num.toFixed(0);
+      }
+    }
+  },
+
+  setEvacuationFuelCost(value) {
+    this.evacuationFuelCostEl.textContent = value === undefined || value === null ? '--' : formatNumber(parseFloat(value));
+  },
+
+  setEvacuationFoodCost(value) {
+    this.evacuationFoodCostEl.textContent = value === undefined || value === null ? '--' : formatNumber(parseFloat(value));
+  },
+
+  setEvacuationTotalCost(value) {
+    this.evacuationTotalCostEl.textContent = value === undefined || value === null ? '--' : formatNumber(parseFloat(value));
+  },
+
+  setEvacuationCostPerPerson(value) {
+    this.evacuationCostPerPersonEl.textContent = value === undefined || value === null ? '--' : formatNumber(parseFloat(value));
   },
 };
 
@@ -816,6 +906,24 @@ launchBtn.addEventListener('click', async () => {
   console.log(`  Shockwave: ${shockwavePopulationResult.population.toLocaleString()} people`);
   console.log(`  Earthquake: ${earthquakePopulationResult.population.toLocaleString()} people`);
   console.log(`  Dust: ${dustPopulationResult.population.toLocaleString()} people`);
+
+  // Calculate evacuation cost based on maximum shockwave distance
+  const maxShockwaveDistance = Math.max(...schockWavePerDistance.map(d => d.distance));
+  const evacuationData = evacuationCost(shockwavePopulationResult.population, maxShockwaveDistance);
+
+  // Set evacuation cost displays
+  asteroidOutputs.setEvacuationPopulation(evacuationData.population);
+  asteroidOutputs.setEvacuationFuel(evacuationData.fuelLiters);
+  asteroidOutputs.setEvacuationFuelCost(evacuationData.fuelCost);
+  asteroidOutputs.setEvacuationFoodCost(evacuationData.foodCost);
+  asteroidOutputs.setEvacuationTotalCost(evacuationData.totalCost);
+  asteroidOutputs.setEvacuationCostPerPerson(evacuationData.costPerPerson);
+
+  console.log("Evacuation cost data:");
+  console.log(`  Max distance: ${maxShockwaveDistance}km`);
+  console.log(`  Population: ${evacuationData.population.toLocaleString()}`);
+  console.log(`  Total cost: €${evacuationData.totalCost}`);
+  console.log(`  Cost per person: €${evacuationData.costPerPerson}`);
 
   // Store results for tab switching
   lastCalculationResults = {
