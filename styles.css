@@ -288,6 +288,11 @@ body {
   margin-bottom: 5px;
 }
 
+/* Asteroid selector styling */
+#asteroid-selector {
+  font-size: 0.9rem;
+}
+
 /* ensure label appears above circle tiles */
 .leaflet-marker-pane .crater-label {
   z-index: 650;

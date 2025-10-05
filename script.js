@@ -1,4 +1,73 @@
+// Import asteroid fetcher functions
+import { getHazardousAsteroidsForLastDay } from './asteroid_fetcher.js';
+
 // Initialize the map
+
+// Global object to store hazardous asteroid data
+let hazardousAsteroidsData = [];
+
+// Function to fetch and store hazardous asteroid data
+async function fetchAndStoreHazardousAsteroids(days = 7) {
+
+  days = 7;
+  try {
+    const asteroids = await getHazardousAsteroidsForLastDay(days);
+    hazardousAsteroidsData = asteroids;
+    console.log(`Loaded ${asteroids.length} hazardous asteroids`);
+    updateAsteroidDropdown();
+    return asteroids;
+  } catch (error) {
+    console.error('Error fetching hazardous asteroids:', error);
+    hazardousAsteroidsData = [];
+    updateAsteroidDropdown();
+    return [];
+  }
+}
+
+// Function to update the asteroid dropdown
+function updateAsteroidDropdown() {
+  const selector = document.getElementById('asteroid-selector');
+  if (!selector) return;
+
+  // Clear existing options except the first one
+  selector.innerHTML = '<option value="">Select Hazardous Asteroid</option>';
+
+  console.log("Hazardous asteroids data: ", hazardousAsteroidsData);
+
+  // Add asteroid options
+  hazardousAsteroidsData.forEach((asteroid, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    option.textContent = `${asteroid.name} (${asteroid.diameterKm.toFixed(3)}km, ${asteroid.speedKms.toFixed(1)}km/s)`;
+    selector.appendChild(option);
+  });
+
+  console.log(`Updated dropdown with ${hazardousAsteroidsData.length} asteroids`);
+}
+
+// Function to autofill input fields when asteroid is selected
+function autofillAsteroidData(asteroidIndex) {
+  if (asteroidIndex === '' || !hazardousAsteroidsData[asteroidIndex]) {
+    return;
+  }
+
+  const asteroid = hazardousAsteroidsData[asteroidIndex];
+
+  // Fill the input fields
+  document.getElementById('asteroid-density-input').value = Math.round(asteroid.density);
+  document.getElementById('asteroid-diameter-input').value = Math.round(asteroid.diameter);
+  document.getElementById('asteroid-speed-input').value = Math.round(asteroid.speed);
+  document.getElementById('angle-ranger').value = asteroid.angle;
+
+  // Update angle display
+  document.getElementById('angle-current-value').textContent = asteroid.angle + '°';
+
+  console.log(`Autofilled with asteroid: ${asteroid.name}`);
+  console.log(`  - Diameter: ${asteroid.diameter}m (${asteroid.diameterKm}km)`);
+  console.log(`  - Density: ${asteroid.density}kg/m³`);
+  console.log(`  - Speed: ${asteroid.speed}m/s (${asteroid.speedKms}km/s)`);
+  console.log(`  - Angle: ${asteroid.angle}°`);
+}
 
 const angle_ranger = document.getElementById('angle-ranger');
 const angle_current_value = document.getElementById('angle-current-value');
@@ -403,7 +472,7 @@ const lngSpan = document.getElementById('coord-lng');
 let curLat = 0;
 let curLng = 0;
 
-updateCoords = function (lat, lng) {
+const updateCoords = (lat, lng) => {
   if (!latSpan || !lngSpan) return;
   curLat = lat;
   curLng = lng;
@@ -589,7 +658,7 @@ launchBtn.addEventListener('click', () => {
   asteroidOutputs.setDustDensity(dustData.density_per_m3);
   // asteroidOutputs.setDustOpacity(dustData.opacity);
 
-  thresholds = [
+  const thresholds = [
     {
       "name": "99% fatal",
       "psi": 70
@@ -608,9 +677,9 @@ launchBtn.addEventListener('click', () => {
     }
   ];
 
-  schockWavePerDistance = getShockWaves(diameter, speed, density, angle);
+  const schockWavePerDistance = getShockWaves(diameter, speed, density, angle);
   // Assign distances to thresholds based on PSI values
-  thresholds_upd = assignThresholdDistances(thresholds, schockWavePerDistance, 'psi', 'psi');
+  const thresholds_upd = assignThresholdDistances(thresholds, schockWavePerDistance, 'psi', 'psi');
   console.log("Db per distance: ", schockWavePerDistance);
   console.log("Thr Upd ", thresholds_upd);
 
@@ -634,7 +703,7 @@ launchBtn.addEventListener('click', () => {
   ];
 
   // Assign distances to earthquake thresholds based on magnitude values
-  earthquakeThresholds_upd = assignThresholdDistances(earthquakeThresholds, earthquakeMagnitudeData, 'magnitude', 'magnitude');
+  const earthquakeThresholds_upd = assignThresholdDistances(earthquakeThresholds, earthquakeMagnitudeData, 'magnitude', 'magnitude');
   console.log("Earthquake magnitude per distance: ", earthquakeMagnitudeData);
   console.log("Earthquake thresholds updated: ", earthquakeThresholds_upd);
 
@@ -761,6 +830,17 @@ tabButtons.forEach(button => {
   button.addEventListener('click', () => {
     switchTab(button.dataset.tab);
   });
+});
+
+// Asteroid selector event listener
+const asteroidSelector = document.getElementById('asteroid-selector');
+asteroidSelector.addEventListener('change', (e) => {
+  autofillAsteroidData(e.target.value);
+});
+
+// Fetch hazardous asteroids when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  fetchAndStoreHazardousAsteroids(28);
 });
 
 // Store last calculation results for circle display

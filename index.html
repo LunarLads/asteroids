@@ -28,6 +28,13 @@
 
       <div class="asteroid-block">
         <div class="input-holder">
+          <label for="asteroid-selector">Select Hazardous Asteroid 🛰️</label>
+          <select id="asteroid-selector" class="form-control">
+            <option value="">Choose an asteroid to autofill parameters</option>
+          </select>
+        </div>
+
+        <div class="input-holder">
           <label for="asteroid-density-input">Asteroid Density (kg/m³) ⚖️</label>
           <input type="number" id="asteroid-density-input" class="form-control" placeholder="Enter density"
             value="1000">
@@ -113,7 +120,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 
 </html>
