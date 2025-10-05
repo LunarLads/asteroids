@@ -4,375 +4,439 @@
 /* Combined modern rounded UI for the right panel */
 
 :root {
-    --panel-bg: #ffffff;
-    --panel-accent: linear-gradient(90deg, #6dd5ed 0%, #2193b0 100%);
-    --muted: #6b7280;
-    --border: rgba(16, 24, 40, 0.06);
+  --panel-bg: #ffffff;
+  --panel-accent: linear-gradient(90deg, #6dd5ed 0%, #2193b0 100%);
+  --muted: #6b7280;
+  --border: rgba(16, 24, 40, 0.06);
 }
 
 /* 1. Use a more-intuitive box-sizing model */
 *,
 *::before,
 *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 /* Apply the shake to the body when the 'shake' class is added */
 body.shake {
-    animation: shake 0.5s ease-in-out;
-    animation-iteration-count: 2;
+  animation: shake 0.5s ease-in-out;
+  animation-iteration-count: 2;
 }
 
 .col-title {
-    font-size: 2.4rem;
-    color: #ce370e;
-    margin-top: 5px;
-    text-align: left;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 2.4rem;
+  color: #ce370e;
+  margin-top: 5px;
+  text-align: left;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* 2. Remove default margin and ensure full-height layout */
 html,
 body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    font-size: 16px;
-    /* base font size for better readability */
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-size: 16px;
+  /* base font size for better readability */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .app-container {
-    display: flex;
-    flex-direction: row;
-    height: 100vh;
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
 }
 
 .map-column {
-    /* allow more space for the map; give panel more room */
-    flex: 1 1 60%;
-    position: relative;
-    display: flex;
-    flex-direction: column;
+  /* allow more space for the map; give panel more room */
+  flex: 1 1 60%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Let the map take remaining vertical space inside the map column */
 #map {
-    flex: 1 1 auto;
-    width: 100%;
-    min-height: 0;
-    /* allow flex child to shrink properly */
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  /* allow flex child to shrink properly */
 }
 
 .panel-column {
-    /* increased width to make UI larger and more comfortable */
-    flex: 0 0 440px;
-    padding: 20px;
-    border-left: 1px solid #ddd;
-    overflow-y: auto;
-    background: var(--panel-bg);
-    box-shadow: 0 8px 30px rgba(20, 20, 40, 0.06);
-    border-radius: 14px;
-    border: 1px solid var(--border);
+  /* increased width to make UI larger and more comfortable */
+  flex: 0 0 440px;
+  padding: 20px;
+  border-left: 1px solid #ddd;
+  overflow-y: auto;
+  background: var(--panel-bg);
+  box-shadow: 0 8px 30px rgba(20, 20, 40, 0.06);
+  border-radius: 14px;
+  border: 1px solid var(--border);
 }
 
 .panel-column label {
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 6px;
-    display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+  display: block;
 }
 
 .panel-column h4,
 .panel-column h5,
 .panel-column h6 {
-    color: #2193b0;
-    margin-bottom: 12px;
+  color: #2193b0;
+  margin-bottom: 12px;
 }
 
 .panel-column h4 {
-    font-size: 1.8rem;
+  font-size: 1.8rem;
 }
 
 .asteroid-block {
-    margin-top: 10px;
-    margin-bottom: 10px;
-    padding: 12px;
-    background: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 #toggleButton {
-    position: absolute;
-    top: 10px;
-    left: 50px;
-    z-index: 1000;
-    padding: 10px;
-    background-color: white;
-    border: 2px solid #333;
-    border-radius: 4px;
-    cursor: pointer;
+  position: absolute;
+  top: 10px;
+  left: 50px;
+  z-index: 1000;
+  padding: 10px;
+  background-color: white;
+  border: 2px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 #info {
-    position: absolute;
-    top: 55px;
-    left: 50px;
-    z-index: 1000;
-    padding: 10px;
-    background-color: white;
-    border: 2px solid #333;
-    border-radius: 4px;
-    max-width: 300px;
+  position: absolute;
+  top: 55px;
+  left: 50px;
+  z-index: 1000;
+  padding: 10px;
+  background-color: white;
+  border: 2px solid #333;
+  border-radius: 4px;
+  max-width: 300px;
 }
 
 #calcButton {
-    position: absolute;
-    top: 10px;
-    left: 200px;
-    z-index: 1000;
-    padding: 10px;
-    background-color: white;
-    border: 2px solid #333;
-    border-radius: 4px;
-    cursor: pointer;
+  position: absolute;
+  top: 10px;
+  left: 200px;
+  z-index: 1000;
+  padding: 10px;
+  background-color: white;
+  border: 2px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .map-buttons {
-    margin-left: 50px;
+  margin-left: 50px;
 }
 
 /* Responsive: stack on small screens */
 @media (max-width: 900px) {
-    .app-container {
-        flex-direction: column;
-    }
+  .app-container {
+    flex-direction: column;
+  }
 
-    .panel-column {
-        border-left: none;
-        border-top: 1px solid #ddd;
-        width: 100%;
-        flex: none;
-        height: 40vh;
-    }
+  .panel-column {
+    border-left: none;
+    border-top: 1px solid #ddd;
+    width: 100%;
+    flex: none;
+    height: 40vh;
+  }
 
-    #map {
-        height: 60vh;
-    }
+  #map {
+    height: 60vh;
+  }
 }
 
 .container-fluid {
-    padding: 0;
+  padding: 0;
 }
 
 /* Form controls from styles3.css */
 .form-control,
 .form-range {
-    border-radius: 10px;
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    padding: 10px 12px;
-    background: #fbfdff;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 10px 12px;
+  background: #fbfdff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .form-control:focus {
-    border-color: #2193b0;
-    box-shadow: 0 0 0 3px rgba(33, 147, 176, 0.1);
+  border-color: #2193b0;
+  box-shadow: 0 0 0 3px rgba(33, 147, 176, 0.1);
 }
 
 .form-range {
-    height: 44px;
+  height: 44px;
 }
 
 .launch-asteroid-btn {
-    margin-top: 12px;
-    display: flex;
-    justify-content: center;
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
 }
 
 /* Launch button from styles3.css, overriding styles.css */
 #launchBtn {
-    background: var(--panel-accent);
-    color: white;
-    border: none;
-    padding: 14px 26px;
-    border-radius: 12px;
-    font-weight: 700;
-    letter-spacing: 0.4px;
-    box-shadow: 0 6px 20px rgba(33, 147, 176, 0.18);
-    font-size: 1.18rem;
-    cursor: pointer;
-    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  background: var(--panel-accent);
+  color: white;
+  border: none;
+  padding: 14px 26px;
+  border-radius: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  box-shadow: 0 6px 20px rgba(33, 147, 176, 0.18);
+  font-size: 1.18rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 #launchBtn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 22px rgba(33, 147, 176, 0.32);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(33, 147, 176, 0.32);
 }
 
 #launchBtn:active {
-    transform: translateY(0);
-    box-shadow: 0 6px 12px rgba(33, 147, 176, 0.2);
+  transform: translateY(0);
+  box-shadow: 0 6px 12px rgba(33, 147, 176, 0.2);
 }
 
 #launchBtn:focus {
-    outline: 3px solid rgba(33, 147, 176, 0.25);
-    outline-offset: 2px;
+  outline: 3px solid rgba(33, 147, 176, 0.25);
+  outline-offset: 2px;
 }
 
 /* Small screens: full-width button */
 @media (max-width: 600px) {
-    #launchBtn {
-        width: 100%;
-        padding: 16px 20px;
-        font-size: 1.1rem;
-        border-radius: 10px;
-    }
+  #launchBtn {
+    width: 100%;
+    padding: 16px 20px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+  }
 }
 
 /* Result block from styles3.css */
 .launch-result {
-    margin-top: 12px;
-    padding: 14px 16px;
-    background: linear-gradient(180deg, #ffffff, #fbfeff);
-    border-radius: 10px;
-    border: 1px solid rgba(15, 23, 42, 0.04);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, #ffffff, #fbfeff);
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .launch-result h5 {
-    margin: 4px 0 8px 0;
-    color: #0b1220;
+  margin: 4px 0 8px 0;
+  color: #0b1220;
 }
 
 .launch-result div {
-    color: #0b1220;
-    font-weight: 700;
-    margin: 8px 0;
+  color: #0b1220;
+  font-weight: 700;
+  margin: 8px 0;
 }
 
 .target-angle-range-text {
-    display: flex;
-    justify-content: space-between;
+  display: flex;
+  justify-content: space-between;
 }
 
 #angle-ranger {
-    width: 100%;
+  width: 100%;
 }
 
 #diamater-ranger {
-    width: 100%;
+  width: 100%;
 }
 
 .crater-label {
-    position: relative;
-    left: -50%;
-    display: inline-block;
-    background: rgba(0, 0, 0, 0.5);
-    color: #fff;
-    padding: 3px;
-    border-radius: 10px;
-    font-weight: 400;
-    font-size: 5px;
-    white-space: nowrap;
-    pointer-events: none;
-    transform: translateY(-4px);
+  position: relative;
+  left: -50%;
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  padding: 3px;
+  border-radius: 10px;
+  font-weight: 400;
+  font-size: 5px;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-4px);
 }
 
 .input-holder {
-    margin-bottom: 5px;
+  margin-bottom: 5px;
 }
 
 /* ensure label appears above circle tiles */
 .leaflet-marker-pane .crater-label {
-    z-index: 650;
+  z-index: 650;
 }
 
 .result-title {
-    font-size: 24px;
+  font-size: 24px;
+}
+
+/* Tab buttons styling */
+.result-tabs {
+  display: flex;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tab-button {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  background: #f5f5f5;
+  color: #666;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-right: 1px solid #ddd;
+}
+
+.tab-button:last-child {
+  border-right: none;
+}
+
+.tab-button:hover {
+  background: #e9e9e9;
+  color: #333;
+}
+
+.tab-button.active {
+  background: linear-gradient(135deg, #2193b0, #6dd5ed);
+  color: white;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tab-button:focus {
+  outline: 2px solid rgba(33, 147, 176, 0.3);
+  outline-offset: 2px;
+}
+
+/* Result content sections */
+.result-content {
+  display: none;
+}
+
+.result-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 
 @keyframes shake {
 
-    0%,
-    100% {
-        transform: translateX(0);
-    }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
 
-    10%,
-    30%,
-    50%,
-    70%,
-    90% {
-        transform: translateX(-10px);
-    }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-10px);
+  }
 
-    20%,
-    40%,
-    60%,
-    80% {
-        transform: translateX(10px);
-    }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(10px);
+  }
 }
 
 /* Larger UI overrides: increase base type scale and control sizes */
 :root {
-    --ui-scale: 1.12;
-    /* scale factor */
+  --ui-scale: 1.12;
+  /* scale factor */
 }
 
 body {
-    font-size: calc(16px * var(--ui-scale));
+  font-size: calc(16px * var(--ui-scale));
 }
 
 /* Bigger inputs */
 .form-control,
 input.form-control,
 textarea.form-control {
-    font-size: 1.12rem;
-    padding: 12px 14px;
+  font-size: 1.12rem;
+  padding: 12px 14px;
 }
 
 .form-range {
-    height: 44px;
+  height: 44px;
 }
 
 
 
 /* Bump button size */
 #launchBtn {
-    font-size: 1.25rem;
-    padding: 16px 40px;
+  font-size: 1.25rem;
+  padding: 16px 40px;
 }
 
 .logo {
-    text-align: left;
-    font-size: 40px;
+  text-align: left;
+  font-size: 40px;
 }
 
 .title-holder {
-    display: flex;
+  display: flex;
 }
 
 .crater-label {
-    font-size: 20px;
-    padding: 8px 12px;
+  font-size: 20px;
+  padding: 8px 12px;
 }
 
 @media (max-width: 900px) {
 
-    /* reduce scale slightly on small screens */
-    :root {
-        --ui-scale: 1.02;
-    }
+  /* reduce scale slightly on small screens */
+  :root {
+    --ui-scale: 1.02;
+  }
 
-    body {
-        font-size: calc(16px * var(--ui-scale));
-    }
+  body {
+    font-size: calc(16px * var(--ui-scale));
+  }
 }

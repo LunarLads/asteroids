@@ -302,9 +302,9 @@ launchBtn.addEventListener('click', () => {
 
   console.log("Crater ", estimateCrater(diameter, speed, angle, density));
 
-  const { db, energyTNTKg } = shockWaveDecibels(diameter, speed, density, angle, 40);
+  const { db, energyTNTKg } = shockWaveDecibels(diameter, speed, density, angle, 60);
 
-  console.log("Shockwave ", shockWaveDecibels(diameter, speed, density, angle, 40));
+  console.log("Shockwave ", shockWaveDecibels(diameter, speed, density, angle, 60));
 
   asteroidOutputs.setCraterWidth(craterDiameter);
   asteroidOutputs.setCraterDepth(craterDepth);
@@ -312,9 +312,6 @@ launchBtn.addEventListener('click', () => {
   // Convert kg to megatons for display (1 megaton = 1,000,000 kg)
   const energyTNT_megatons = energyTNTKg / 1_000_000;
   asteroidOutputs.setEnergyTNT(energyTNT_megatons);
-
-
-  createCircle(curLat, curLng, craterDiameter, "crater", "red", "red", 0.5);
 
   thresholds = [
     {
@@ -335,18 +332,21 @@ launchBtn.addEventListener('click', () => {
     }
   ];
 
-
   schockWavePerDistance = getShockWaves(diameter, speed, density, angle);
-
   thresholds_upd = assignThresholdDistances(thresholds, schockWavePerDistance);
   console.log("Db per distance: ", schockWavePerDistance);
-
   console.log("Thr Upd ", thresholds_upd);
 
-  thresholds_upd.forEach(obj => {
-    createCircle(curLat, curLng, obj.distance * 1000, obj.name, "blue", "#34bbc9", 0.15);
-  });
+  // Store results for tab switching
+  lastCalculationResults = {
+    curLat,
+    curLng,
+    craterDiameter,
+    thresholds_upd
+  };
 
+  // Display circles based on active tab
+  displayCirclesForActiveTab();
 
   // Optionally pan to the launch location
   map.panTo([curLat, curLng]);
@@ -381,5 +381,60 @@ angle_current_value.innerText = angle_ranger.value + "°";
 angle_ranger.addEventListener('input', () => {
   angle_current_value.textContent = angle_ranger.value + "°";
 });
+
+// Tab switching functionality
+const tabButtons = document.querySelectorAll('.tab-button');
+const resultContents = document.querySelectorAll('.result-content');
+let activeTab = 'crater';
+
+function switchTab(tabName) {
+  // Update active button
+  tabButtons.forEach(button => {
+    button.classList.toggle('active', button.dataset.tab === tabName);
+  });
+
+  // Update active content
+  resultContents.forEach(content => {
+    content.classList.toggle('active', content.id === `${tabName}-results`);
+  });
+
+  activeTab = tabName;
+
+  // Re-display circles based on active tab
+  displayCirclesForActiveTab();
+}
+
+// Add click listeners to tab buttons
+tabButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    switchTab(button.dataset.tab);
+  });
+});
+
+// Store last calculation results for circle display
+let lastCalculationResults = null;
+
+function displayCirclesForActiveTab() {
+  if (!lastCalculationResults) return;
+
+  const { curLat, curLng, craterDiameter, thresholds_upd } = lastCalculationResults;
+
+  // Clear existing circles (except asteroid marker)
+  map.eachLayer(function (layer) {
+    if (layer instanceof L.TileLayer) return; // keep tiles
+    if (layer instanceof L.Marker && layer === asteroidMarker) return;
+    map.removeLayer(layer);
+  });
+
+  if (activeTab === 'crater') {
+    // Show crater circle
+    createCircle(curLat, curLng, craterDiameter, "crater", "red", "red", 0.5);
+  } else if (activeTab === 'shockwave') {
+    // Show shockwave circles
+    thresholds_upd.forEach(obj => {
+      createCircle(curLat, curLng, obj.distance * 1000, obj.name, "blue", "#34bbc9", 0.15);
+    });
+  }
+}
 
 

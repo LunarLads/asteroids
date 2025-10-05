@@ -61,12 +61,26 @@
 
       <div class="launch-result">
         <h4>Result 📊</h4>
-        <div class="result-title">Crater 🕳️</div>
-        <div>Width: <span id="result-width">--</span> m</div>
-        <div>Depth: <span id="result-depth">--</span> m</div>
-        <div>Sound Level: <span id="result-soundlevel">--</span> dB 🔊</div>
-        <div>Energy Trinitrotoluene (TNT): <span id="result-energytnt">--</span> megatons 💥</div>
-        <!-- Adjusted unit based on script -->
+
+        <!-- Tab buttons -->
+        <div class="result-tabs">
+          <button class="tab-button active" data-tab="crater">Crater 🕳️</button>
+          <button class="tab-button" data-tab="shockwave">Shockwave 💥</button>
+        </div>
+
+        <!-- Crater results -->
+        <div class="result-content active" id="crater-results">
+          <div class="result-title">Crater 🕳️</div>
+          <div>Width: <span id="result-width">--</span> m</div>
+          <div>Depth: <span id="result-depth">--</span> m</div>
+        </div>
+
+        <!-- Shockwave results -->
+        <div class="result-content" id="shockwave-results">
+          <div class="result-title">Shockwave 💥</div>
+          <div>Sound Level: <span id="result-soundlevel">--</span> dB 🔊</div>
+          <div>Energy Trinitrotoluene (TNT): <span id="result-energytnt">--</span> megatons 💥</div>
+        </div>
       </div>
     </div>
   </div>
