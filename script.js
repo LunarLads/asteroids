@@ -520,7 +520,7 @@ launchBtn.addEventListener('click', function () {
 });
 
 // Function to create explosion animation
-function createExplosionAnimation(lat, lng, maxRadius, duration = 5500) {
+function createExplosionAnimation(lat, lng, maxRadius, duration = 2500) {
   const explosionCircles = [];
   const numCircles = 4; // Reduced number of expanding circles
   const interval = duration / numCircles; // Time between each circle
@@ -539,10 +539,10 @@ function createExplosionAnimation(lat, lng, maxRadius, duration = 5500) {
       circle.addTo(map);
       explosionCircles.push(circle);
 
-      // Animate the circle expansion (1.5x faster)
+      // Animate the circle expansion (2x faster)
       let currentRadius = 0;
       const targetRadius = maxRadius;
-      const animationDuration = (duration * 0.8) / 1.5; // 1.5x faster expansion
+      const animationDuration = (duration * 0.8) / 2; // 2x faster expansion
       const steps = 60; // Number of animation steps
       const stepTime = animationDuration / steps;
       const radiusIncrement = targetRadius / steps;
@@ -558,7 +558,7 @@ function createExplosionAnimation(lat, lng, maxRadius, duration = 5500) {
           // Fade out the circle
           let opacity = 0.05;
           const fadeSteps = 20;
-          const fadeInterval = ((duration * 0.2) / 1.5) / fadeSteps; // 1.5x faster fade
+          const fadeInterval = ((duration * 0.2) / 2) / fadeSteps; // 2x faster fade
           let fadeStep = 0;
 
           const fadeOut = () => {
@@ -724,19 +724,19 @@ launchBtn.addEventListener('click', () => {
 
   // Create explosion animation (travel much further)
   const explosionRadius = Math.max(craterDiameter * 8, 25000); // Much larger distance, at least 25km radius
-  createExplosionAnimation(curLat, curLng, explosionRadius, 5500); // 5.5 second duration
+  createExplosionAnimation(curLat, curLng, explosionRadius, 2500); // 2.5 second duration
 
   // Display circles based on active tab (delay crater until animation ends)
   setTimeout(() => {
     displayCirclesForActiveTab(false); // Don't show crater during animation
   }, 500);
 
-  // Show crater circle after animation ends (5.5 seconds)
+  // Show crater circle after animation ends (2.5 seconds)
   setTimeout(() => {
     if (activeTab === 'crater') {
       displayCirclesForActiveTab(true); // Show crater after animation
     }
-  }, 5500);
+  }, 2500);
 
   // Optionally pan to the launch location
   map.panTo([curLat, curLng]);
