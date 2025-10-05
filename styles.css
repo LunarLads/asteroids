@@ -313,12 +313,14 @@ body {
 
 .tab-button {
   flex: 1;
-  padding: 10px 12px;
+  padding: 7px;
+  /* Reduced padding */
   border: none;
   background: #f5f5f5;
   color: #666;
   font-weight: 600;
   font-size: 0.9rem;
+  /* Smaller font size */
   cursor: pointer;
   transition: all 0.2s ease;
   border-right: 1px solid #ddd;

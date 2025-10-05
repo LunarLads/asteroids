@@ -69,6 +69,76 @@ function autofillAsteroidData(asteroidIndex) {
   console.log(`  - Angle: ${asteroid.angle}°`);
 }
 
+// Function to get population data for a given location and radius
+async function getPopulationInSquare(lat, lng, radiusMeters) {
+  try {
+    const apiUrl = `https://lobster-app-bhpix.ondigitalocean.app/?lat=${lat}&lng=${lng}&radii=${radiusMeters}`;
+
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // The API returns an object with a populations array
+    if (data.populations && Array.isArray(data.populations) && data.populations.length > 0) {
+      return {
+        success: true,
+        population: data.populations[0],
+        radius: radiusMeters,
+        location: { lat, lng }
+      };
+    } else {
+      return {
+        success: false,
+        population: 0,
+        radius: radiusMeters,
+        location: { lat, lng },
+        error: 'No population data found'
+      };
+    }
+  } catch (error) {
+    console.error('Error fetching population data:', error);
+    return {
+      success: false,
+      population: 0,
+      radius: radiusMeters,
+      location: { lat, lng },
+      error: error.message
+    };
+  }
+}
+
+// Function to calculate population affected by crater
+async function calculateCraterPopulation(lat, lng, craterDiameter) {
+  const radiusMeters = craterDiameter / 2; // Crater radius in meters
+  return await getPopulationInSquare(lat, lng, radiusMeters);
+}
+
+// Function to calculate population affected by shockwave
+async function calculateShockwavePopulation(lat, lng, shockwaveData) {
+  // Use the distance of the most severe shockwave effect (99% fatal)
+  const maxDistance = Math.max(...shockwaveData.map(d => d.distance));
+  const radiusMeters = maxDistance * 1000; // Convert km to meters
+  return await getPopulationInSquare(lat, lng, radiusMeters);
+}
+
+// Function to calculate population affected by earthquake
+async function calculateEarthquakePopulation(lat, lng, earthquakeData) {
+  // Use the distance of the most severe earthquake effect
+  const maxDistance = Math.max(...earthquakeData.map(d => d.distance));
+  const radiusMeters = maxDistance * 1000; // Convert km to meters
+  return await getPopulationInSquare(lat, lng, radiusMeters);
+}
+
+// Function to calculate population affected by dust cloud
+async function calculateDustPopulation(lat, lng, dustData) {
+  const radiusMeters = dustData.radius_km * 1000; // Convert km to meters
+  return await getPopulationInSquare(lat, lng, radiusMeters);
+}
+
 const angle_ranger = document.getElementById('angle-ranger');
 const angle_current_value = document.getElementById('angle-current-value');
 
@@ -169,7 +239,7 @@ function getEarthquakeMagnitudes(asteroidDiameter, speed, density, impactAngle) 
   const res = [];
   let distance = 1;
   // Continue until magnitude drops below 3.0 (light earthquake threshold)
-  while (res.length == 0 || res[res.length - 1].magnitude > 3.0) {
+  while (res.length == 0 || res[res.length - 1].magnitude > 3.9) {
     const earthquakeData = estimateEarthquakeMagnitude(asteroidDiameter, speed, impactAngle, density, distance * 1000);
     res.push({
       distance,
@@ -214,7 +284,7 @@ function calculateDustCloud(asteroidDiameter, speed, impactAngle, density, hours
   // Current radius using more realistic atmospheric dispersion model
   // Dust particles disperse more slowly with atmospheric drag
   // Make radius much more dependent on time by increasing time scaling
-  const currentRadius = initialRadius + expansionRate * Math.pow(timeSeconds, 0.8) * 0.5;
+  const currentRadius = initialRadius + expansionRate * Math.pow(timeSeconds, 0.8) * 0.1;
 
   // Dust density calculation (particles per cubic meter)
   // Density decreases with cube of radius (volume expansion)
@@ -381,6 +451,10 @@ const asteroidOutputs = {
   dustHeightEl: document.getElementById('result-dust-height'),
   dustDensityEl: document.getElementById('result-dust-density'),
   dustOpacityEl: document.getElementById('result-dust-opacity'),
+  craterPopulationEl: document.getElementById('result-crater-population'),
+  shockwavePopulationEl: document.getElementById('result-shockwave-population'),
+  earthquakePopulationEl: document.getElementById('result-earthquake-population'),
+  dustPopulationEl: document.getElementById('result-dust-population'),
 
   setCraterWidth(value) {
     this.widthEl.textContent = value === undefined || value === null ? '--' : String(value.toFixed(2));
@@ -428,6 +502,22 @@ const asteroidOutputs = {
 
   setDustOpacity(value) {
     this.dustOpacityEl.textContent = value === undefined || value === null ? '--' : String((value * 100).toFixed(1));
+  },
+
+  setCraterPopulation(value) {
+    this.craterPopulationEl.textContent = value === undefined || value === null ? '--' : value.toLocaleString();
+  },
+
+  setShockwavePopulation(value) {
+    this.shockwavePopulationEl.textContent = value === undefined || value === null ? '--' : value.toLocaleString();
+  },
+
+  setEarthquakePopulation(value) {
+    this.earthquakePopulationEl.textContent = value === undefined || value === null ? '--' : value.toLocaleString();
+  },
+
+  setDustPopulation(value) {
+    this.dustPopulationEl.textContent = value === undefined || value === null ? '--' : value.toLocaleString();
   },
 };
 
@@ -610,7 +700,7 @@ function createCircle(curLat, curLng, radius, tagName, color, fillColor, fillOpa
   L.marker([labelLat, labelLng], { icon: divIcon, interactive: false }).addTo(map);
 }
 
-launchBtn.addEventListener('click', () => {
+launchBtn.addEventListener('click', async () => {
   console.log("Coords:" + curLat + " " + curLng);
 
   map.eachLayer(function (layer) {
@@ -707,6 +797,26 @@ launchBtn.addEventListener('click', () => {
   console.log("Earthquake magnitude per distance: ", earthquakeMagnitudeData);
   console.log("Earthquake thresholds updated: ", earthquakeThresholds_upd);
 
+  // Calculate population affected by each effect
+  const [craterPopulationResult, shockwavePopulationResult, earthquakePopulationResult, dustPopulationResult] = await Promise.all([
+    calculateCraterPopulation(curLat, curLng, craterDiameter),
+    calculateShockwavePopulation(curLat, curLng, schockWavePerDistance),
+    calculateEarthquakePopulation(curLat, curLng, earthquakeMagnitudeData),
+    calculateDustPopulation(curLat, curLng, dustData)
+  ]);
+
+  // Set population displays
+  asteroidOutputs.setCraterPopulation(craterPopulationResult.population);
+  asteroidOutputs.setShockwavePopulation(shockwavePopulationResult.population);
+  asteroidOutputs.setEarthquakePopulation(earthquakePopulationResult.population);
+  asteroidOutputs.setDustPopulation(dustPopulationResult.population);
+
+  console.log("Population affected:");
+  console.log(`  Crater: ${craterPopulationResult.population.toLocaleString()} people`);
+  console.log(`  Shockwave: ${shockwavePopulationResult.population.toLocaleString()} people`);
+  console.log(`  Earthquake: ${earthquakePopulationResult.population.toLocaleString()} people`);
+  console.log(`  Dust: ${dustPopulationResult.population.toLocaleString()} people`);
+
   // Store results for tab switching
   lastCalculationResults = {
     curLat,
@@ -796,6 +906,17 @@ dustHoursInput.addEventListener('input', () => {
     asteroidOutputs.setDustDensity(newDustData.density_per_m3);
     // asteroidOutputs.setDustOpacity(newDustData.opacity);
 
+    // Recalculate dust population with new radius
+    calculateDustPopulation(lastCalculationResults.curLat, lastCalculationResults.curLng, newDustData)
+      .then(result => {
+        asteroidOutputs.setDustPopulation(result.population);
+        console.log(`Dust population updated: ${result.population.toLocaleString()} people`);
+      })
+      .catch(error => {
+        console.error('Error recalculating dust population:', error);
+        asteroidOutputs.setDustPopulation(0);
+      });
+
     // Force update circles if dust tab is active
     if (activeTab === 'dust') {
       displayCirclesForActiveTab(true);
@@ -846,6 +967,38 @@ document.addEventListener('DOMContentLoaded', () => {
 // Store last calculation results for circle display
 let lastCalculationResults = null;
 
+// Helper function to filter out duplicate distances, keeping only the most severe one
+function filterDuplicateDistances(thresholdsArray, severityField = 'distance') {
+  if (!Array.isArray(thresholdsArray)) return [];
+
+  const distanceMap = new Map();
+
+  thresholdsArray.forEach(threshold => {
+    if (threshold.distance !== null && threshold.distance !== undefined) {
+      const distance = threshold.distance;
+
+      // For earthquakes, we want the HIGHEST magnitude (most severe)
+      // For shockwaves, we want the HIGHEST PSI (most severe)
+      // For general case, we keep the one with highest severity value
+      if (!distanceMap.has(distance)) {
+        distanceMap.set(distance, threshold);
+      } else {
+        const currentThreshold = distanceMap.get(distance);
+        const currentSeverity = currentThreshold[severityField];
+        const newSeverity = threshold[severityField];
+
+        // Keep the threshold with higher severity value
+        if (newSeverity > currentSeverity) {
+          distanceMap.set(distance, threshold);
+        }
+      }
+    }
+  });
+
+  // Convert back to array and sort by distance (ascending)
+  return Array.from(distanceMap.values()).sort((a, b) => a.distance - b.distance);
+}
+
 function displayCirclesForActiveTab(showCrater = true) {
   if (!lastCalculationResults) return;
 
@@ -862,12 +1015,16 @@ function displayCirclesForActiveTab(showCrater = true) {
     // Show crater circle only if showCrater is true
     createCircle(curLat, curLng, craterDiameter, "crater", "red", "red", 0.5);
   } else if (activeTab === 'shockwave') {
-    // Show shockwave circles
-    thresholds_upd.forEach(obj => {
-      createCircle(curLat, curLng, obj.distance * 1000, obj.name, "blue", "#34bbc9", 0.15);
+    // Show shockwave circles (filter duplicates, keep highest PSI)
+    const filteredShockwaves = filterDuplicateDistances(thresholds_upd, 'psi');
+    filteredShockwaves.forEach(obj => {
+      if (obj.distance) {
+        createCircle(curLat, curLng, obj.distance * 1000, obj.name, "blue", "#34bbc9", 0.15);
+      }
     });
   } else if (activeTab === 'earthquake') {
-    // Show earthquake magnitude threshold circles using the same mechanism as shockwaves
+    // Show earthquake magnitude threshold circles (filter duplicates, keep highest magnitude)
+    const filteredEarthquakes = filterDuplicateDistances(earthquakeThresholds_upd, 'magnitude');
     const earthquakeColors = {
       "Devastating (Mw 8+)": "#8B0000",    // Dark red
       "Major (Mw 7+)": "#DC143C",         // Crimson
@@ -876,7 +1033,7 @@ function displayCirclesForActiveTab(showCrater = true) {
       "Light (Mw 4+)": "#FFFF00"          // Yellow
     };
 
-    earthquakeThresholds_upd.forEach(obj => {
+    filteredEarthquakes.forEach(obj => {
       if (obj.distance) {
         const color = earthquakeColors[obj.name] || "#808080";
         createCircle(curLat, curLng, obj.distance * 1000, obj.name, color, color, 0.2);
