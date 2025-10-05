@@ -48,6 +48,10 @@
                     <span id="angle-current-value"></span>
                     <input type="range" class="form-range" id="angle-ranger" min="0" max="90" step="1" value="45">
                 </div>
+                <div class="dust-control">
+                    <label for="dust-time">Time after impact (hours):</label>
+                    <input id="dust-time" type="number" value="1" min="1" />
+                </div>
                 <div class="target-angle-range-text">
                     <span>0°</span>
                     <span>90°</span>
@@ -66,6 +70,11 @@
                     <h5 class="mt-2">Crater</h5>
                     <div>Width: <span id="result-width">--</span> m</div>
                     <div>Depth: <span id="result-depth">--</span> m</div>
+                    <div>Max Temperature: <span id="result-temperature">--</span> °C</div>
+                    <div>Max Wind Speed: <span id="result-wind">--</span> km/h</div>
+                    <div>Dust Radius: <span id="result-dust">--</span></div>
+                    <div>Tsunami Height: <span id="result-tsunami">--</span> m</div>
+                    <div>Potential Flood Radius: <span id="result-flood">--</span> km</div>
                 </div>
             </div>
         </aside>
