@@ -450,6 +450,72 @@ launchBtn.addEventListener('click', function () {
   }, 1000); // Matches the animation duration
 });
 
+// Function to create explosion animation
+function createExplosionAnimation(lat, lng, maxRadius, duration = 5500) {
+  const explosionCircles = [];
+  const numCircles = 4; // Reduced number of expanding circles
+  const interval = duration / numCircles; // Time between each circle
+
+  // Create multiple expanding circles
+  for (let i = 0; i < numCircles; i++) {
+    setTimeout(() => {
+      const circle = L.circle([lat, lng], {
+        color: 'red',
+        fillColor: 'red',
+        fillOpacity: 0.05,
+        radius: 0,
+        weight: 5
+      });
+
+      circle.addTo(map);
+      explosionCircles.push(circle);
+
+      // Animate the circle expansion (1.5x faster)
+      let currentRadius = 0;
+      const targetRadius = maxRadius;
+      const animationDuration = (duration * 0.8) / 1.5; // 1.5x faster expansion
+      const steps = 60; // Number of animation steps
+      const stepTime = animationDuration / steps;
+      const radiusIncrement = targetRadius / steps;
+
+      let step = 0;
+      const animateCircle = () => {
+        if (step < steps) {
+          currentRadius += radiusIncrement;
+          circle.setRadius(currentRadius);
+          step++;
+          setTimeout(animateCircle, stepTime);
+        } else {
+          // Fade out the circle
+          let opacity = 0.05;
+          const fadeSteps = 20;
+          const fadeInterval = ((duration * 0.2) / 1.5) / fadeSteps; // 1.5x faster fade
+          let fadeStep = 0;
+
+          const fadeOut = () => {
+            if (fadeStep < fadeSteps) {
+              opacity -= 0.05 / fadeSteps;
+              circle.setStyle({
+                fillOpacity: opacity,
+                opacity: opacity
+              });
+              fadeStep++;
+              setTimeout(fadeOut, fadeInterval);
+            } else {
+              // Remove the circle
+              map.removeLayer(circle);
+            }
+          };
+
+          setTimeout(fadeOut, 100);
+        }
+      };
+
+      setTimeout(animateCircle, 50);
+    }, i * interval);
+  }
+}
+
 function createCircle(curLat, curLng, radius, tagName, color, fillColor, fillOpacity) {
   const circle = L.circle([curLat, curLng], {
     color: color,
@@ -587,8 +653,21 @@ launchBtn.addEventListener('click', () => {
     angle
   };
 
-  // Display circles based on active tab
-  displayCirclesForActiveTab();
+  // Create explosion animation (travel much further)
+  const explosionRadius = Math.max(craterDiameter * 8, 25000); // Much larger distance, at least 25km radius
+  createExplosionAnimation(curLat, curLng, explosionRadius, 5500); // 5.5 second duration
+
+  // Display circles based on active tab (delay crater until animation ends)
+  setTimeout(() => {
+    displayCirclesForActiveTab(false); // Don't show crater during animation
+  }, 500);
+
+  // Show crater circle after animation ends (5.5 seconds)
+  setTimeout(() => {
+    if (activeTab === 'crater') {
+      displayCirclesForActiveTab(true); // Show crater after animation
+    }
+  }, 5500);
 
   // Optionally pan to the launch location
   map.panTo([curLat, curLng]);
@@ -650,7 +729,7 @@ dustHoursInput.addEventListener('input', () => {
 
     // Force update circles if dust tab is active
     if (activeTab === 'dust') {
-      displayCirclesForActiveTab();
+      displayCirclesForActiveTab(true);
     }
   }
 });
@@ -674,7 +753,7 @@ function switchTab(tabName) {
   activeTab = tabName;
 
   // Re-display circles based on active tab
-  displayCirclesForActiveTab();
+  displayCirclesForActiveTab(true);
 }
 
 // Add click listeners to tab buttons
@@ -687,7 +766,7 @@ tabButtons.forEach(button => {
 // Store last calculation results for circle display
 let lastCalculationResults = null;
 
-function displayCirclesForActiveTab() {
+function displayCirclesForActiveTab(showCrater = true) {
   if (!lastCalculationResults) return;
 
   const { curLat, curLng, craterDiameter, thresholds_upd, earthquakeData, earthquakeThresholds_upd, dustData, density, diameter, speed, angle } = lastCalculationResults;
@@ -699,8 +778,8 @@ function displayCirclesForActiveTab() {
     map.removeLayer(layer);
   });
 
-  if (activeTab === 'crater') {
-    // Show crater circle
+  if (activeTab === 'crater' && showCrater) {
+    // Show crater circle only if showCrater is true
     createCircle(curLat, curLng, craterDiameter, "crater", "red", "red", 0.5);
   } else if (activeTab === 'shockwave') {
     // Show shockwave circles
