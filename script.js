@@ -66,11 +66,7 @@ function shockWaveDecibels(asteroidDiameter, speed, density, impactAngle, radius
   const P_psi = P / 6894;
 
   // convert to dB SPL
-  let db = 20 * Math.log10(P / P_ref);
-
-  if (db > 185) {
-    db = 185;
-  }
+  const db = 20 * Math.log10(P / P_ref);
 
   return {
     energyJoules: E,
@@ -100,6 +96,94 @@ function getShockWaves(asteroidDiameter, speed, density, impactAngle) {
   return res;
 }
 
+function getEarthquakeMagnitudes(asteroidDiameter, speed, density, impactAngle) {
+  const res = [];
+  let distance = 1;
+  // Continue until magnitude drops below 3.0 (light earthquake threshold)
+  while (res.length == 0 || res[res.length - 1].magnitude > 3.0) {
+    const earthquakeData = estimateEarthquakeMagnitude(asteroidDiameter, speed, impactAngle, density, distance * 1000);
+    res.push({
+      distance,
+      magnitude: earthquakeData.moment_magnitude,
+      intensity: earthquakeData.intensity
+    });
+    distance++;
+  }
+
+  return res;
+}
+
+function calculateDustCloud(asteroidDiameter, speed, impactAngle, density, hours) {
+  const r = asteroidDiameter / 2;
+  const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
+  const mass = volume * density;
+
+  // effective vertical velocity
+  const theta = (impactAngle * Math.PI) / 180;
+  const vEff = speed * Math.sin(theta);
+
+  // kinetic energy (J)
+  const E = 0.5 * mass * vEff * vEff;
+
+  // TNT equivalent (kilotons) for scaling
+  const W_kt = E / (4.184e9); // joules per kiloton of TNT
+
+  // Dust cloud spread calculation based on impact energy and time
+  // Using more conservative scaling based on actual impact crater studies
+
+  // Initial dust cloud radius (m) - immediate post-impact
+  // Much smaller scaling factor for more realistic sizes
+  const initialRadius = Math.pow(W_kt, 0.33) * 200; // meters (reduced scaling)
+
+  // Dust cloud expansion rate (m/s) - decreases over time
+  // Increased expansion rate to make time dependency more visible
+  const expansionRate = Math.pow(W_kt, 0.15) * 50; // m/s initially (increased for more time dependency)
+
+  // Time in seconds
+  const timeSeconds = hours * 3600;
+
+  // Current radius using more realistic atmospheric dispersion model
+  // Dust particles disperse more slowly with atmospheric drag
+  // Make radius much more dependent on time by increasing time scaling
+  const currentRadius = initialRadius + expansionRate * Math.pow(timeSeconds, 0.8) * 0.5;
+
+  // Dust density calculation (particles per cubic meter)
+  // Density decreases with cube of radius (volume expansion)
+  const initialDensity = Math.pow(W_kt, 0.25) * 1e9; // particles/m³ (reduced initial density)
+  const volumeExpansion = Math.pow(currentRadius / initialRadius, 3);
+  const currentDensity = initialDensity / volumeExpansion;
+
+  // Settling rate - larger particles settle faster
+  const settlingTime = Math.pow(W_kt, 0.2) * 3600; // seconds for significant settling (faster settling for more time dependency)
+  const settlingFactor = Math.exp(-timeSeconds / settlingTime);
+  const effectiveDensity = currentDensity * settlingFactor;
+
+  // Visibility/opacity calculation
+  // Based on dust concentration and particle size
+  const visibilityThreshold = 1e5; // particles/m³ for significant visibility (lower threshold)
+  const opacity = Math.min(0.7, Math.log10(Math.max(effectiveDensity / visibilityThreshold, 1)) / 3);
+  const finalOpacity = Math.max(0.05, opacity);
+
+  // Dust cloud height (m) - decreases over time due to settling
+  const initialHeight = Math.pow(W_kt, 0.3) * 200; // meters (reduced height scaling)
+  const currentHeight = initialHeight * Math.exp(-timeSeconds / (settlingTime * 2));
+
+  // Convert to more readable units
+  const radiusKm = currentRadius / 1000;
+  const heightKm = currentHeight / 1000;
+
+  return {
+    radius_m: currentRadius,
+    radius_km: radiusKm,
+    height_m: currentHeight,
+    height_km: heightKm,
+    density_per_m3: effectiveDensity,
+    opacity: finalOpacity,
+    hours: hours,
+    energy_kt: W_kt
+  };
+}
+
 
 function estimateFireballDiameter(asteroidDiameter, speed, impactAngle, density) {
   const r = asteroidDiameter / 2;
@@ -125,11 +209,76 @@ function estimateFireballDiameter(asteroidDiameter, speed, impactAngle, density)
   };
 }
 
+function estimateEarthquakeMagnitude(asteroidDiameter, speed, impactAngle, density, radius) {
+  const r = asteroidDiameter / 2;
+  const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
+  const mass = volume * density;
+
+  // effective vertical velocity
+  const theta = (impactAngle * Math.PI) / 180;
+  const vEff = speed * Math.sin(theta);
+
+  // kinetic energy (J)
+  const E = 0.5 * mass * vEff * vEff;
+
+  // TNT equivalent (kg)
+  const W_kg = E / (4.184e6); // joules per kg of TNT
+
+  // Seismic magnitude estimation based on energy and distance
+  // Using empirical relationships from impact crater studies
+
+  // Moment magnitude at source (based on energy)
+  // Mw = (2/3) * log10(E) - 6.07 (where E is in Joules)
+  const Mw_source = (2 / 3) * Math.log10(E) - 6.07;
+
+  // Distance attenuation factor
+  // Simplified attenuation model for impact-induced seismic waves
+  const distance_km = radius / 1000;
+
+  // Geometric spreading and absorption
+  const geometric_spreading = Math.log10(distance_km + 1);
+  const absorption = 0.01 * distance_km; // 0.01 magnitude units per km
+
+  // Final magnitude at given distance
+  const Mw_at_distance = Mw_source - geometric_spreading - absorption;
+
+  // Ensure magnitude is within reasonable bounds
+  const Mw_final = Math.max(0, Math.min(Mw_at_distance, 12));
+
+  // Richter magnitude approximation (for comparison)
+  // M_L ≈ M_w - 0.3 for typical earthquake magnitudes
+  const Richter_magnitude = Mw_final - 0.3;
+
+  // Intensity estimation (Modified Mercalli Scale)
+  let intensity = "I";
+  if (Mw_final >= 8.0) intensity = "XII";
+  else if (Mw_final >= 7.5) intensity = "XI";
+  else if (Mw_final >= 7.0) intensity = "X";
+  else if (Mw_final >= 6.5) intensity = "IX";
+  else if (Mw_final >= 6.0) intensity = "VIII";
+  else if (Mw_final >= 5.5) intensity = "VII";
+  else if (Mw_final >= 5.0) intensity = "VI";
+  else if (Mw_final >= 4.5) intensity = "V";
+  else if (Mw_final >= 4.0) intensity = "IV";
+  else if (Mw_final >= 3.5) intensity = "III";
+  else if (Mw_final >= 3.0) intensity = "II";
+
+  return {
+    moment_magnitude: Mw_final,
+    richter_magnitude: Richter_magnitude,
+    intensity: intensity,
+    energy_J: E,
+    energyTNT_kg: W_kg,
+    distance_km: distance_km
+  };
+}
+
 const asteroidInputs = {
   densityEl: document.getElementById('asteroid-density-input'),
   diameterEl: document.getElementById('asteroid-diameter-input'),
   speedEl: document.getElementById('asteroid-speed-input'),
   angleEl: angle_ranger,
+  dustHoursEl: document.getElementById('dust-hours-input'),
 
   // parse element value to number (NaN if missing/invalid)
   _toNumber(el) {
@@ -144,7 +293,8 @@ const asteroidInputs = {
       density: this._toNumber(this.densityEl),
       diameter: this._toNumber(this.diameterEl),
       speed: this._toNumber(this.speedEl),
-      angle: this._toNumber(this.angleEl)
+      angle: this._toNumber(this.angleEl),
+      dustHours: this._toNumber(this.dustHoursEl)
     };
   }
 };
@@ -154,6 +304,14 @@ const asteroidOutputs = {
   depthEl: document.getElementById('result-depth'),
   soundLevelEl: document.getElementById('result-soundlevel'),
   energyTNTEl: document.getElementById('result-energytnt'),
+  momentMagEl: document.getElementById('result-moment-mag'),
+  richterMagEl: document.getElementById('result-richter-mag'),
+  intensityEl: document.getElementById('result-intensity'),
+  earthquakeDistanceEl: document.getElementById('result-earthquake-distance'),
+  dustRadiusEl: document.getElementById('result-dust-radius'),
+  dustHeightEl: document.getElementById('result-dust-height'),
+  dustDensityEl: document.getElementById('result-dust-density'),
+  dustOpacityEl: document.getElementById('result-dust-opacity'),
 
   setCraterWidth(value) {
     this.widthEl.textContent = value === undefined || value === null ? '--' : String(value.toFixed(2));
@@ -169,6 +327,38 @@ const asteroidOutputs = {
 
   setEnergyTNT(value) {
     this.energyTNTEl.textContent = value === undefined || value === null ? '--' : String(value.toFixed(2));
+  },
+
+  setMomentMagnitude(value) {
+    this.momentMagEl.textContent = value === undefined || value === null ? '--' : String(value.toFixed(2));
+  },
+
+  setRichterMagnitude(value) {
+    this.richterMagEl.textContent = value === undefined || value === null ? '--' : String(value.toFixed(2));
+  },
+
+  setIntensity(value) {
+    this.intensityEl.textContent = value === undefined || value === null ? '--' : String(value);
+  },
+
+  setEarthquakeDistance(value) {
+    this.earthquakeDistanceEl.textContent = value === undefined || value === null ? '--' : String(value.toFixed(1));
+  },
+
+  setDustRadius(value) {
+    this.dustRadiusEl.textContent = value === undefined || value === null ? '--' : String(value.toFixed(2));
+  },
+
+  setDustHeight(value) {
+    this.dustHeightEl.textContent = value === undefined || value === null ? '--' : String(value.toFixed(2));
+  },
+
+  setDustDensity(value) {
+    this.dustDensityEl.textContent = value === undefined || value === null ? '--' : String(value.toExponential(2));
+  },
+
+  setDustOpacity(value) {
+    this.dustOpacityEl.textContent = value === undefined || value === null ? '--' : String((value * 100).toFixed(1));
   },
 };
 
@@ -294,7 +484,7 @@ launchBtn.addEventListener('click', () => {
     map.removeLayer(layer);
   });
 
-  const { density, diameter, speed, angle } = asteroidInputs.getValues();
+  const { density, diameter, speed, angle, dustHours } = asteroidInputs.getValues();
 
   console.log("Asteroid: ", asteroidInputs.getValues());
 
@@ -302,9 +492,17 @@ launchBtn.addEventListener('click', () => {
 
   console.log("Crater ", estimateCrater(diameter, speed, angle, density));
 
-  const { db, energyTNTKg } = shockWaveDecibels(diameter, speed, density, angle, 60);
+  const { db, energyTNTKg } = shockWaveDecibels(diameter, speed, density, angle, 60 * 1000); // 1km distance
 
-  console.log("Shockwave ", shockWaveDecibels(diameter, speed, density, angle, 60));
+  console.log("Shockwave ", shockWaveDecibels(diameter, speed, density, angle, 60 * 1000));
+
+  // Calculate earthquake magnitude at 100km distance (representative distance)
+  const earthquakeData = estimateEarthquakeMagnitude(diameter, speed, angle, density, 100000); // 100km in meters
+  console.log("Earthquake ", earthquakeData);
+
+  // Calculate dust cloud data at specified hours
+  const dustData = calculateDustCloud(diameter, speed, angle, density, dustHours || 1);
+  console.log("Dust cloud ", dustData);
 
   asteroidOutputs.setCraterWidth(craterDiameter);
   asteroidOutputs.setCraterDepth(craterDepth);
@@ -312,6 +510,18 @@ launchBtn.addEventListener('click', () => {
   // Convert kg to megatons for display (1 megaton = 1,000,000 kg)
   const energyTNT_megatons = energyTNTKg / 1_000_000;
   asteroidOutputs.setEnergyTNT(energyTNT_megatons);
+
+  // Set earthquake data
+  asteroidOutputs.setMomentMagnitude(earthquakeData.moment_magnitude);
+  asteroidOutputs.setRichterMagnitude(earthquakeData.richter_magnitude);
+  asteroidOutputs.setIntensity(earthquakeData.intensity);
+  asteroidOutputs.setEarthquakeDistance(earthquakeData.distance_km);
+
+  // Set dust data
+  asteroidOutputs.setDustRadius(dustData.radius_km);
+  asteroidOutputs.setDustHeight(dustData.height_km);
+  asteroidOutputs.setDustDensity(dustData.density_per_m3);
+  // asteroidOutputs.setDustOpacity(dustData.opacity);
 
   thresholds = [
     {
@@ -333,16 +543,48 @@ launchBtn.addEventListener('click', () => {
   ];
 
   schockWavePerDistance = getShockWaves(diameter, speed, density, angle);
-  thresholds_upd = assignThresholdDistances(thresholds, schockWavePerDistance);
+  // Assign distances to thresholds based on PSI values
+  thresholds_upd = assignThresholdDistances(thresholds, schockWavePerDistance, 'psi', 'psi');
   console.log("Db per distance: ", schockWavePerDistance);
   console.log("Thr Upd ", thresholds_upd);
+
+  // Generate earthquake magnitude data at different distances
+  const earthquakeMagnitudeData = getEarthquakeMagnitudes(diameter, speed, density, angle);
+
+  // Earthquake magnitude thresholds
+  const earthquakeThresholds = [
+    {
+      "name": "Devastating (Mw 8+)",
+      "magnitude": 8.0
+    },
+    {
+      "name": "Strong (Mw 6+)",
+      "magnitude": 6.0
+    },
+    {
+      "name": "Light (Mw 4+)",
+      "magnitude": 4.0
+    }
+  ];
+
+  // Assign distances to earthquake thresholds based on magnitude values
+  earthquakeThresholds_upd = assignThresholdDistances(earthquakeThresholds, earthquakeMagnitudeData, 'magnitude', 'magnitude');
+  console.log("Earthquake magnitude per distance: ", earthquakeMagnitudeData);
+  console.log("Earthquake thresholds updated: ", earthquakeThresholds_upd);
 
   // Store results for tab switching
   lastCalculationResults = {
     curLat,
     curLng,
     craterDiameter,
-    thresholds_upd
+    thresholds_upd,
+    earthquakeData,
+    earthquakeThresholds_upd,
+    dustData,
+    density,
+    diameter,
+    speed,
+    angle
   };
 
   // Display circles based on active tab
@@ -355,21 +597,25 @@ launchBtn.addEventListener('click', () => {
 
 /**
  * For each threshold object adds a `distance` property.
- * distance = first shockWavePerDistance entry.distance where entry.psi >= threshold.psi
+ * Finds the first shock entry where the threshold field value >= shock field value.
  * If no match found, distance is set to null.
  *
- * @param {Array<object>} thresholdsArr  - array of threshold objects ({name, psi, ...})
- * @param {Array<object>} shockArr       - array of shock entries ({distance, db, psi, ...})
- * @returns {Array<object>} the mutated thresholdsArr
+ * @param {Array<object>} thresholdsArr  - array of threshold objects
+ * @param {Array<object>} shockArr       - array of shock entries with distance property
+ * @param {string} thresholdField        - field name in threshold objects to compare (e.g., 'psi', 'magnitude')
+ * @param {string} shockField            - field name in shock objects to compare against (e.g., 'psi', 'magnitude')
+ * @returns {Array<object>} the mutated thresholdsArr with distance property added
+ * 
  */
-function assignThresholdDistances(thresholdsArr, shockArr) {
+function assignThresholdDistances(thresholdsArr, shockArr, thresholdField = 'psi', shockField = 'psi') {
 
   thresholdsArr = [...thresholdsArr];
 
   if (!Array.isArray(thresholdsArr) || !Array.isArray(shockArr)) return thresholdsArr;
 
   thresholdsArr.forEach(th => {
-    const match = shockArr.find(s => Number(th.psi) >= Number(s.psi));
+    const thresholdValue = Number(th[thresholdField]);
+    const match = shockArr.find(s => thresholdValue >= Number(s[shockField]));
     th.distance = match ? match.distance : null;
   });
 
@@ -380,6 +626,33 @@ angle_current_value.innerText = angle_ranger.value + "°";
 
 angle_ranger.addEventListener('input', () => {
   angle_current_value.textContent = angle_ranger.value + "°";
+});
+
+// Dust hours input event listener
+const dustHoursInput = document.getElementById('dust-hours-input');
+dustHoursInput.addEventListener('input', () => {
+  // Only recalculate if we have previous calculation results
+  if (lastCalculationResults) {
+    const { density, diameter, speed, angle } = lastCalculationResults;
+    const hours = parseFloat(dustHoursInput.value) || 1;
+
+    // Recalculate dust data with new hours
+    const newDustData = calculateDustCloud(diameter, speed, angle, density, hours);
+
+    // Update stored results
+    lastCalculationResults.dustData = newDustData;
+
+    // Update display values
+    asteroidOutputs.setDustRadius(newDustData.radius_km);
+    asteroidOutputs.setDustHeight(newDustData.height_km);
+    asteroidOutputs.setDustDensity(newDustData.density_per_m3);
+    // asteroidOutputs.setDustOpacity(newDustData.opacity);
+
+    // Force update circles if dust tab is active
+    if (activeTab === 'dust') {
+      displayCirclesForActiveTab();
+    }
+  }
 });
 
 // Tab switching functionality
@@ -417,7 +690,7 @@ let lastCalculationResults = null;
 function displayCirclesForActiveTab() {
   if (!lastCalculationResults) return;
 
-  const { curLat, curLng, craterDiameter, thresholds_upd } = lastCalculationResults;
+  const { curLat, curLng, craterDiameter, thresholds_upd, earthquakeData, earthquakeThresholds_upd, dustData, density, diameter, speed, angle } = lastCalculationResults;
 
   // Clear existing circles (except asteroid marker)
   map.eachLayer(function (layer) {
@@ -434,6 +707,41 @@ function displayCirclesForActiveTab() {
     thresholds_upd.forEach(obj => {
       createCircle(curLat, curLng, obj.distance * 1000, obj.name, "blue", "#34bbc9", 0.15);
     });
+  } else if (activeTab === 'earthquake') {
+    // Show earthquake magnitude threshold circles using the same mechanism as shockwaves
+    const earthquakeColors = {
+      "Devastating (Mw 8+)": "#8B0000",    // Dark red
+      "Major (Mw 7+)": "#DC143C",         // Crimson
+      "Strong (Mw 6+)": "#FF4500",        // Orange red
+      "Moderate (Mw 5+)": "#FFA500",      // Orange
+      "Light (Mw 4+)": "#FFFF00"          // Yellow
+    };
+
+    earthquakeThresholds_upd.forEach(obj => {
+      if (obj.distance) {
+        const color = earthquakeColors[obj.name] || "#808080";
+        createCircle(curLat, curLng, obj.distance * 1000, obj.name, color, color, 0.2);
+      }
+    });
+  } else if (activeTab === 'dust') {
+    // Show dust cloud circle with opacity based on density
+    // Get current hours from input field and recalculate if needed
+    const currentHours = parseFloat(document.getElementById('dust-hours-input').value) || 1;
+
+    // Use current dust data or recalculate if not available
+    let currentDustData = dustData;
+    if (!currentDustData || Math.abs(currentDustData.hours - currentHours) > 0.01) {
+      // Recalculate with current hours
+      currentDustData = calculateDustCloud(diameter, speed, angle, density, currentHours);
+    }
+
+    if (currentDustData) {
+      const dustRadius = currentDustData.radius_m;
+      const dustOpacity = currentDustData.opacity;
+      const dustLabel = `${currentDustData.radius_km.toFixed(1)}km radius at ${currentDustData.hours}h`;
+
+      createCircle(curLat, curLng, dustRadius, dustLabel, "#8B4513", "#8B4513", dustOpacity);
+    }
   }
 }
 

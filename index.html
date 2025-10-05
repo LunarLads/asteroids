@@ -66,6 +66,8 @@
         <div class="result-tabs">
           <button class="tab-button active" data-tab="crater">Crater 🕳️</button>
           <button class="tab-button" data-tab="shockwave">Shockwave 💥</button>
+          <button class="tab-button" data-tab="earthquake">Earthquake 🌍</button>
+          <button class="tab-button" data-tab="dust">Dust ☁️</button>
         </div>
 
         <!-- Crater results -->
@@ -80,6 +82,31 @@
           <div class="result-title">Shockwave 💥</div>
           <div>Sound Level: <span id="result-soundlevel">--</span> dB 🔊</div>
           <div>Energy Trinitrotoluene (TNT): <span id="result-energytnt">--</span> megatons 💥</div>
+        </div>
+
+        <!-- Earthquake results -->
+        <div class="result-content" id="earthquake-results">
+          <div class="result-title">Earthquake 🌍</div>
+          <div>Moment Magnitude: <span id="result-moment-mag">--</span> Mw</div>
+          <div>Richter Magnitude: <span id="result-richter-mag">--</span> ML</div>
+          <div>Intensity: <span id="result-intensity">--</span> (MMI)</div>
+          <div>Distance: <span id="result-earthquake-distance">--</span> km</div>
+        </div>
+
+        <!-- Dust results -->
+        <div class="result-content" id="dust-results">
+          <div class="result-title">Dust Cloud ☁️</div>
+
+          <!-- Hours input field -->
+          <div class="input-holder">
+            <label for="dust-hours-input">Hours After Impact ⏰</label>
+            <input type="number" id="dust-hours-input" class="form-control" placeholder="Enter hours" value="1"
+              min="0.1" step="0.1">
+          </div>
+
+          <div>Radius: <span id="result-dust-radius">--</span> km</div>
+          <div>Height: <span id="result-dust-height">--</span> km</div>
+          <div>Density: <span id="result-dust-density">--</span> particles/m³</div>
         </div>
       </div>
     </div>
