@@ -36,6 +36,63 @@ function estimateCrater(asteroidDiameter, speed, impactAngle, density) {
     };
 }
 
+function shockWaveDecibels(asteroidDiameter, speed, density, impactAngle, radius) {
+    // constants
+    const P_ref = 20e-6; // reference pressure (Pa)
+    const TNT_J = 4.184e9; // joules per ton TNT
+
+    // asteroid properties
+    const r = asteroidDiameter / 2;
+    const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
+    const mass = volume * density;
+
+    // effective velocity (account for impact angle, vertical=90°)
+    const vEffective = speed * Math.sin((impactAngle * Math.PI) / 180);
+
+    // kinetic energy (Joules)
+    const E = 0.5 * mass * Math.pow(vEffective, 2);
+
+    // TNT equivalent (tons)
+    const W = E / TNT_J;
+
+    // peak overpressure at radius (Pa), cube law approximation
+    const P = 808 * Math.pow(W ** (1 / 3) / radius, 3);
+
+    // convert to dB SPL
+    const db = 20 * Math.log10(P / P_ref);
+
+    return {
+        energyJoules: E,
+        energyTNT: W,
+        overpressurePa: P,
+        db: db
+    };
+}
+
+function estimateFireballDiameter(asteroidDiameter, speed, impactAngle, density) {
+    const r = asteroidDiameter / 2;
+    const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
+    const mass = volume * density;
+
+    // effective vertical velocity
+    const theta = (impactAngle * Math.PI) / 180;
+    const vEff = speed * Math.sin(theta);
+
+    // kinetic energy (J)
+    const E = 0.5 * mass * vEff * vEff;
+
+    // fireball diameter scaling (Collins et al.)
+    const k = 0.136; // tuned so 1 km / 30 km/s / ρ=3000 gives ~17.7 km
+    const diameter_m = k * Math.pow(E, 0.25);
+    const diameter_km = diameter_m / 1000;
+
+    return {
+        diameter_m,
+        diameter_km,
+        energy_J: E
+    };
+}
+
 const asteroidInputs = {
     densityEl: document.getElementById('asteroid-density-input'),
     diameterEl: document.getElementById('asteroid-diameter-input'),
@@ -60,9 +117,53 @@ const asteroidInputs = {
     }
 };
 
+// Compute seismic energy (fraction of total)
+function seismicEnergy(E, density) {
+    if (density >= 7000) f_s = 0.0001;
+    if (density >= 3000) f_s = 0.00015;
+    const f_s = 0.00025;
+    E_seismic = f_s * E
+    return E_seismic;
+};
+
+// Convert to earthquake moment magnitude
+function momentMagnitude(E_seismic) {
+    return (2 / 3) * Math.log10(E_seismic) - 3.2;
+};
+
+// Estimate peak ground acceleration (PGA) at distance R
+function peakGroundAcceleration(E_seismic, R_m, k = 0.5) {
+    return k * Math.pow(E_seismic, 1/3) / R_m; // m/s²
+};
+
+// Run the full calculation and show results
+function asteroidSeismic(diameter, speed, density, f_s, angle) {
+    const r = diameter / 2;
+    const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
+    const mass = volume * density;
+
+    // effective vertical velocity
+    const theta = (angle * Math.PI) / 180;
+    const vEff = speed * Math.sin(theta);
+
+    // kinetic energy (J)
+    const E = 0.5 * mass * vEff * vEff;
+    const E_seismic = seismicEnergy(E, f_s);
+    const Mw = (2 / 3) * Math.log10(E_seismic) - 3.2;
+
+    console.log(`Moment Magnitude (Mw): ${Mw}`);
+
+    return {
+        magnitude: Mw,    
+    };
+};
+
 const asteroidOutputs = {
     widthEl: document.getElementById('result-width'),
     depthEl: document.getElementById('result-depth'),
+    soundLevelEl: document.getElementById('result-soundlevel'),
+    energyTNTEl: document.getElementById('result-energytnt'),
+    magnitudeEl: document.getElementById('result-magnitude'),
 
     setCraterWidth(value) {
         this.widthEl.textContent = value === undefined || value === null ? '--' : String(value);
@@ -70,7 +171,19 @@ const asteroidOutputs = {
 
     setCraterDepth(value) {
         this.depthEl.textContent = value === undefined || value === null ? '--' : String(value);
-    }
+    },
+
+    setSoundLevel(value) {
+        this.soundLevelEl.textContent = value === undefined || value === null ? '--' : String(value);
+    },
+
+    setEnergyTNT(value) {
+        this.energyTNTEl.textContent = value === undefined || value === null ? '--' : String(value);
+    },
+
+    setMagnitude(value) {
+        this.magnitudeEl.textContent = value === undefined || value === null ? '--' : String(value);
+    },
 };
 
 const map = L.map('map').setView([0, 0], 2);
@@ -188,6 +301,30 @@ map.on('click', async function (e) {
 // Launch button: place red circle at curLat/curLng with radius 10000
 const launchBtn = document.getElementById('launchBtn');
 
+function createCircle(curLat, curLng, radius, tagName) {
+    const circle = L.circle([curLat, curLng], {
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.7,
+        radius: radius
+    });
+
+    circle.addTo(map);
+
+    const divIcon = L.divIcon({
+        className: '', // keep default wrapper empty
+        html: `<div class="crater-label">${tagName}</div>`,
+        iconSize: null
+    });
+
+    const offsetMeters = radius / 2; // adjust as needed
+    const metersPerDegLat = 111320; // approximate
+    const latOffsetDeg = offsetMeters / metersPerDegLat;
+    const labelLat = curLat - latOffsetDeg * 0.7;
+
+    L.marker([labelLat, curLng], { icon: divIcon, interactive: false }).addTo(map);
+}
+
 launchBtn.addEventListener('click', () => {
     console.log("Coords:" + curLat + " " + curLng);
 
@@ -197,7 +334,7 @@ launchBtn.addEventListener('click', () => {
         map.removeLayer(layer);
     });
 
-    const { density, diameter, speed, angle } = asteroidInputs.getValues();
+    const { density, diameter, speed, angle, E_seismic } = asteroidInputs.getValues();
 
     console.log("Asteroid: ", asteroidInputs.getValues());
 
@@ -205,8 +342,20 @@ launchBtn.addEventListener('click', () => {
 
     console.log("Crater ", estimateCrater(diameter, speed, angle, density));
 
+    const { db, energyTNT } = shockWaveDecibels(diameter, speed, density, angle, 40);
+
+    console.log("Shockwave ", shockWaveDecibels(diameter, speed, density, angle, 40));
+
+    const { magnitude } = asteroidSeismic(diameter, speed, density, E_seismic, angle);
+
+    console.log("Seismic ", asteroidSeismic(diameter, speed, density, E_seismic, angle));
+
+
     asteroidOutputs.setCraterWidth(craterDiameter);
     asteroidOutputs.setCraterDepth(craterDepth);
+    asteroidOutputs.setSoundLevel(db);  
+    asteroidOutputs.setEnergyTNT(energyTNT);
+    asteroidOutputs.setMagnitude(magnitude);
 
     L.circle([curLat, curLng], {
         color: 'red',
@@ -216,9 +365,6 @@ launchBtn.addEventListener('click', () => {
     }).addTo(map);
     // Optionally pan to the launch location
     map.panTo([curLat, curLng]);
-    // } else {
-    //     alert('No valid launch coordinates set. Click on the map first.');
-    // }
 });
 
 
@@ -232,12 +378,12 @@ function calculateAverageElevation() {
     const totalElevation = elevationData.reduce((sum, point) => sum + point.elevation, 0);
     const averageElevation = (totalElevation / elevationData.length).toFixed(2);
     document.getElementById('info').innerHTML += `<br>Average Elevation: ${averageElevation} meters`;
-}
-
-
+};
 
 angle_current_value.innerText = angle_ranger.value + "°";
 
 angle_ranger.addEventListener('input', () => {
     angle_current_value.textContent = angle_ranger.value + "°";
 });
+
+
