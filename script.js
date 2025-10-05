@@ -117,27 +117,8 @@ const asteroidInputs = {
     }
 };
 
-// Compute seismic energy (fraction of total)
-function seismicEnergy(E, density) {
-    if (density >= 7000) f_s = 0.0001;
-    if (density >= 3000) f_s = 0.00015;
-    const f_s = 0.00025;
-    E_seismic = f_s * E
-    return E_seismic;
-};
-
-// Convert to earthquake moment magnitude
-function momentMagnitude(E_seismic) {
-    return (2 / 3) * Math.log10(E_seismic) - 3.2;
-};
-
-// Estimate peak ground acceleration (PGA) at distance R
-function peakGroundAcceleration(E_seismic, R_m, k = 0.5) {
-    return k * Math.pow(E_seismic, 1/3) / R_m; // m/s²
-};
-
 // Run the full calculation and show results
-function asteroidSeismic(diameter, speed, density, f_s, angle) {
+function calculateMagnitude(diameter, speed, density, angle) {
     const r = diameter / 2;
     const volume = (4 / 3) * Math.PI * Math.pow(r, 3);
     const mass = volume * density;
@@ -148,7 +129,13 @@ function asteroidSeismic(diameter, speed, density, f_s, angle) {
 
     // kinetic energy (J)
     const E = 0.5 * mass * vEff * vEff;
-    const E_seismic = seismicEnergy(E, f_s);
+    f_s = 0.00025;
+    if (density >= 7000) {
+        f_s = 0.0001;
+    } else if (density >= 3000) {
+        f_s = 0.00015;
+    }
+    E_seismic = f_s * E
     const Mw = (2 / 3) * Math.log10(E_seismic) - 3.2;
 
     console.log(`Moment Magnitude (Mw): ${Mw}`);
@@ -157,6 +144,26 @@ function asteroidSeismic(diameter, speed, density, f_s, angle) {
         magnitude: Mw,    
     };
 };
+
+
+//function getMagnitudeWaves(asteroidDiameter, speed, density, E_seismic, angle) {
+  //  const res = [];
+ //   let distance = 1;
+  //  while (res.length == 0 || res[res.length - 1].mmi > 3.8) {
+
+   //     const magnitudeWave = asteroidSeismic(asteroidDiameter, speed, density, E_seismic, angle, distance * 1000);
+   //     res.push(
+    //        {
+    //            distance,
+    //            db: magnitudeWave.db,
+    //            mmi: magnitudeWave.mmi
+    //        }
+    //    );
+    //    distance++;
+   // }
+
+   // return res;
+//}
 
 const asteroidOutputs = {
     widthEl: document.getElementById('result-width'),
@@ -301,11 +308,11 @@ map.on('click', async function (e) {
 // Launch button: place red circle at curLat/curLng with radius 10000
 const launchBtn = document.getElementById('launchBtn');
 
-function createCircle(curLat, curLng, radius, tagName) {
+function createCircle(curLat, curLng, radius, tagName, color, fillColor, fillOpacity) {
     const circle = L.circle([curLat, curLng], {
-        color: 'red',
-        fillColor: '#f03',
-        fillOpacity: 0.7,
+        color: color,
+        fillColor: fillColor,
+        fillOpacity: fillOpacity,
         radius: radius
     });
 
@@ -321,8 +328,9 @@ function createCircle(curLat, curLng, radius, tagName) {
     const metersPerDegLat = 111320; // approximate
     const latOffsetDeg = offsetMeters / metersPerDegLat;
     const labelLat = curLat - latOffsetDeg * 0.7;
+    const labelLng = curLng;//+ latOffsetDeg * 0.8;
 
-    L.marker([labelLat, curLng], { icon: divIcon, interactive: false }).addTo(map);
+    L.marker([labelLat, labelLng], { icon: divIcon, interactive: false }).addTo(map);
 }
 
 launchBtn.addEventListener('click', () => {
@@ -346,9 +354,9 @@ launchBtn.addEventListener('click', () => {
 
     console.log("Shockwave ", shockWaveDecibels(diameter, speed, density, angle, 40));
 
-    const { magnitude } = asteroidSeismic(diameter, speed, density, E_seismic, angle);
+    const { magnitude } = calculateMagnitude(diameter, speed, density, angle);
 
-    console.log("Seismic ", asteroidSeismic(diameter, speed, density, E_seismic, angle));
+    console.log("Seismic ", calculateMagnitude(diameter, speed, density, angle));
 
 
     asteroidOutputs.setCraterWidth(craterDiameter);
@@ -357,15 +365,175 @@ launchBtn.addEventListener('click', () => {
     asteroidOutputs.setEnergyTNT(energyTNT);
     asteroidOutputs.setMagnitude(magnitude);
 
-    L.circle([curLat, curLng], {
-        color: 'red',
-        fillColor: '#f03',
-        fillOpacity: 0.3,
-        radius: craterDiameter
-    }).addTo(map);
+    createCircle(curLat, curLng, craterDiameter / 2, "crater", 'brown', 'rgba(122, 51, 9, 1)', 0.5);
+
+    if (magnitude > 10) {
+        thresholds = [
+            {
+                "name": "Magnitude 10.0",
+                "mmi": 10
+            },
+            {
+                "name": "Magnitude 9.0",
+                "mmi": 9
+            },
+            {
+                "name": "Magnitude 8.0",
+                "mmi": 8
+            },
+            {
+                "name": "Magnitude 7.0",
+                "mmi": 7
+            },
+            {
+                "name": "Magnitude 6.0",
+                "mmi": 6
+            },
+            {
+                "name": "Magnitude 5.0",
+                "mmi": 5
+            },
+        ];
+    } else if (magnitude > 9) {
+        thresholds = [
+            {
+                "name": "Magnitude 9.0",
+                "mmi": 9
+            },
+            {
+                "name": "Magnitude 8.0",
+                "mmi": 8
+            },
+            {
+                "name": "Magnitude 7.0",
+                "mmi": 7
+            },
+            {
+                "name": "Magnitude 6.0",
+                "mmi": 6
+            },
+            {
+                "name": "Magnitude 5.0",
+                "mmi": 5
+            },
+        ];
+    } else if (magnitude > 8) {
+        thresholds = [
+            {
+                "name": "Magnitude 8.0",
+                "mmi": 8
+            },
+            {
+                "name": "Magnitude 7.0",
+                "mmi": 7
+            },
+            {
+                "name": "Magnitude 6.0",
+                "mmi": 6
+            },
+            {
+                "name": "Magnitude 5.0",
+                "mmi": 5
+            },
+        ];
+    } else if (magnitude > 7) {
+        thresholds = [
+            {
+                "name": "Magnitude 7.0",
+                "mmi": 7
+            },
+            {
+                "name": "Magnitude 6.0",
+                "mmi": 6
+            },
+            {
+                "name": "Magnitude 5.0",
+                "mmi": 5
+            },
+        ]; 
+    } else if (magnitude > 6) {
+        thresholds = [
+            {
+                "name": "Magnitude 6.0",
+                "mmi": 6
+            },
+            {
+                "name": "Magnitude 5.0",
+                "mmi": 5
+            },
+        ];
+    } else {
+        thresholds = [
+            {
+                "name": "Magnitude 5.0",
+                "mmi": 5
+            },
+        ];
+    }
+    console.log("Thresholds ", thresholds);
+
+function getMagnitudeWaveDistance(magnitude) {
+    
+    const base = Math.pow(10,  0.5 * (magnitude - 6));
+    
+    
+    return [
+        { mmi: 10, distance: base * 0.5 },
+        { mmi: 9, distance: base * 1 },
+        { mmi: 8, distance: base * 2 },
+        { mmi: 7, distance: base * 5 },
+        { mmi: 6, distance: base * 10 },
+        { mmi: 5, distance: base * 15 } 
+    ];
+}
+    const magnitudeWavePerDistance = getMagnitudeWaveDistance(magnitude);
+    console.log("Magnitude waves per distance ", magnitudeWavePerDistance);
+
+
+    let thresholds_upd = thresholds.map(thr => {
+        const match = magnitudeWavePerDistance.find(s => s.mmi === thr.mmi);
+        return { ...thr, distance: match.distance };
+    });
+
+
+    thresholds_upd = assignThresholdDistances(thresholds, magnitudeWavePerDistance);
+    console.log("Thresholds ", thresholds_upd);
+
+    thresholds_upd.forEach(obj => {
+        createCircle(curLat, curLng, obj.distance * 1000, obj.name, "brown", "rgba(122, 51, 9, 1)", 0.5);
+    });
+
+
     // Optionally pan to the launch location
     map.panTo([curLat, curLng]);
 });
+
+
+
+function assignThresholdDistances(thresholdsArr, shockArr) {
+
+    thresholdsArr = [...thresholdsArr];
+
+    if (!Array.isArray(thresholdsArr) || !Array.isArray(shockArr)) return thresholdsArr;
+
+    thresholdsArr.forEach(th => {
+        const match = shockArr.find(s => Number(th.mmi) >= Number(s.mmi));
+        th.distance = match ? match.distance : null;
+    });
+
+    return thresholdsArr;
+}
+
+
+    //L.circle([curLat, curLng], {
+    //    color: 'red',
+    //    fillColor: '#f03',
+    //    fillOpacity: 0.3,
+     //   radius: craterDiameter
+    //}).addTo(map);
+    // Optionally pan to the launch location
+    //map.panTo([curLat, curLng]);
+//});
 
 
 
