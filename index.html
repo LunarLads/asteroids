@@ -17,45 +17,46 @@
     <div class="panel-column">
       <div class="title-holder">
         <div class="logo"></div>
-        <h2 class="col-title">☄️Asteroid Launcher</h2>
+        <h2 class="col-title" data-i18n="appTitle">☄️Asteroid Launcher</h2>
       </div>
 
+      <div class="input-holder" style="margin-bottom: 20px;">
+        <label for="language-select" data-i18n="languageLabel">Language 🌐</label>
+        <select id="language-select" class="form-control">
+          <option value="en" selected>English</option>
+          <option value="es">Español</option>
+        </select>
+      </div>
       <div class="asteroid-block">
-        <h4>Meteor Location 📍</h4>
-        <div>Latitude: <span id="coord-lat">--</span></div>
-        <div>Longitude: <span id="coord-lng">--</span></div>
+        <h4 data-i18n="locationTitle">Meteor Location 📍</h4>
+        <div data-i18n-label="latitudeLabel">Latitude: <span id="coord-lat">--</span></div>
+        <div data-i18n-label="longitudeLabel">Longitude: <span id="coord-lng">--</span></div>
       </div>
 
       <div class="asteroid-block">
         <div class="input-holder">
-          <label for="asteroid-selector">Select Hazardous Asteroid 🛰️</label>
-          <select id="asteroid-selector" class="form-control">
-            <option value="">Choose an asteroid to autofill parameters</option>
-          </select>
-        </div>
-
-        <div class="input-holder">
-          <label for="asteroid-density-input">Asteroid Density (kg/m³) ⚖️</label>
+          <label for="asteroid-density-input" data-i18n="densityLabel">Asteroid Density (kg/m³) ⚖️</label>
           <input type="number" id="asteroid-density-input" class="form-control" placeholder="Enter density"
-            value="1000">
+            value="1000" data-i18n-placeholder="enterDensityPlaceholder">
         </div>
 
         <div class="input-holder">
-          <label for="asteroid-diameter-input">Diameter (m) 📏</label>
+          <label for="asteroid-diameter-input" data-i18n="diameterLabel">Diameter (m) 📏</label>
           <input type="number" id="asteroid-diameter-input" class="form-control" placeholder="Enter diameter"
-            value="1000">
+            value="1000" data-i18n-placeholder="enterDiameterPlaceholder">
         </div>
 
         <div class="input-holder">
-          <label for="asteroid-speed-input">Speed (m/s) ⚡</label>
-          <input type="number" id="asteroid-speed-input" class="form-control" placeholder="Enter speed" value="30000">
+          <label for="asteroid-speed-input" data-i18n="speedLabel">Speed (m/s) ⚡</label>
+          <input type="number" id="asteroid-speed-input" class="form-control" placeholder="Enter speed" value="30000"
+            data-i18n-placeholder="enterSpeedPlaceholder">
         </div>
 
         <div class="input-holder">
-          <label for="angle-ranger">Angle (0-90°) 📐</label>
+          <label for="angle-ranger" data-i18n="angleLabel">Angle (0-90°) 📐</label>
           <div class="target-angle-range-text">
-            <span>0°</span>
-            <span>90°</span>
+            <span data-i18n="zeroDegrees">0°</span>
+            <span data-i18n="ninetyDegrees">90°</span>
           </div>
         </div>
         <input type="range" id="angle-ranger" class="form-range" min="0" max="90" value="45">
@@ -63,81 +64,61 @@
       </div>
 
       <div class="launch-asteroid-btn">
-        <button id="launchBtn">Launch 🚀</button>
+        <button id="launchBtn" data-i18n="launchButton">Launch 🚀</button>
       </div>
-
+<div class="launch-asteroid-btn">
+    <button id="launchBtn" data-i18n="launchButton">Launch 🚀</button>
+    <button id="shareBtn" data-i18n="shareButton" style="background-color: #55acee; color: white;">Share 🌐</button>
+</div>
       <div class="launch-result">
-        <h4>Result 📊</h4>
+        <h4 data-i18n="resultTitle">Result 📊</h4>
 
-        <!-- Evacuation Cost Section -->
-        <div class="evacuation-section">
-          <h5>Evacuation Cost 💰</h5>
-          <div class="evacuation-details">
-            <div>Population Affected: <span id="evacuation-population">--</span> people 👥</div>
-            <div>Fuel Required: <span id="evacuation-fuel">--</span> liters ⛽</div>
-            <div>Fuel Cost: <span id="evacuation-fuel-cost">--</span> €</div>
-            <div>Food Cost: <span id="evacuation-food-cost">--</span> €</div>
-            <div>Total Cost: <span id="evacuation-total-cost">--</span> €</div>
-            <div>Cost Per Person: <span id="evacuation-cost-per-person">--</span> €</div>
-          </div>
-        </div>
-
-        <!-- Tab buttons -->
         <div class="result-tabs">
-          <button class="tab-button active" data-tab="crater">Crater 🕳️</button>
-          <button class="tab-button" data-tab="shockwave">Shockwave 💥</button>
-          <button class="tab-button" data-tab="earthquake">Earthquake 🌍</button>
-          <button class="tab-button" data-tab="dust">Dust ☁️</button>
+          <button class="tab-button active" data-tab="crater" data-i18n="craterTab">Crater 🕳️</button>
+          <button class="tab-button" data-tab="shockwave" data-i18n="shockwaveTab">Shockwave 💥</button>
+          <button class="tab-button" data-tab="earthquake" data-i18n="earthquakeTab">Earthquake 🌍</button>
+          <button class="tab-button" data-tab="dust" data-i18n="dustTab">Dust ☁️</button>
         </div>
 
-        <!-- Crater results -->
         <div class="result-content active" id="crater-results">
-          <div class="result-title">Crater 🕳️</div>
-          <div>Width: <span id="result-width">--</span> m</div>
-          <div>Depth: <span id="result-depth">--</span> m</div>
-          <div>Affected Population: <span id="result-crater-population">--</span> people 👥</div>
+          <div class="result-title" data-i18n="craterResultTitle">Crater 🕳️</div>
+          <div data-i18n-label="widthResult">Width: <span id="result-width">--</span> m</div>
+          <div data-i18n-label="depthResult">Depth: <span id="result-depth">--</span> m</div>
         </div>
 
-        <!-- Shockwave results -->
         <div class="result-content" id="shockwave-results">
-          <div class="result-title">Shockwave 💥</div>
-          <div>Sound Level: <span id="result-soundlevel">--</span> dB 🔊</div>
-          <div>Energy Trinitrotoluene (TNT): <span id="result-energytnt">--</span> megatons 💥</div>
-          <div>Affected Population: <span id="result-shockwave-population">--</span> people 👥</div>
+          <div class="result-title" data-i18n="shockwaveResultTitle">Shockwave 💥</div>
+          <div data-i18n-label="soundLevelResult">Sound Level: <span id="result-soundlevel">--</span> dB 🔊</div>
+          <div data-i18n-label="energyTNTResult">Energy Trinitrotoluene (TNT): <span id="result-energytnt">--</span> megatons 💥</div>
         </div>
 
-        <!-- Earthquake results -->
         <div class="result-content" id="earthquake-results">
-          <div class="result-title">Earthquake 🌍</div>
-          <div>Moment Magnitude: <span id="result-moment-mag">--</span> Mw</div>
-          <div>Richter Magnitude: <span id="result-richter-mag">--</span> ML</div>
-          <div>Intensity: <span id="result-intensity">--</span> (MMI)</div>
-          <div>Distance: <span id="result-earthquake-distance">--</span> km</div>
-          <div>Affected Population: <span id="result-earthquake-population">--</span> people 👥</div>
+          <div class="result-title" data-i18n="earthquakeResultTitle">Earthquake 🌍</div>
+          <div data-i18n-label="momentMagnitudeResult">Moment Magnitude: <span id="result-moment-mag">--</span> Mw</div>
+          <div data-i18n-label="richterMagnitudeResult">Richter Magnitude: <span id="result-richter-mag">--</span> ML</div>
+          <div data-i18n-label="intensityResult">Intensity: <span id="result-intensity">--</span> (MMI)</div>
+          <div data-i18n-label="distanceResult">Distance: <span id="result-earthquake-distance">--</span> km</div>
         </div>
 
-        <!-- Dust results -->
         <div class="result-content" id="dust-results">
-          <div class="result-title">Dust Cloud ☁️</div>
+          <div class="result-title" data-i18n="dustResultTitle">Dust Cloud ☁️</div>
 
-          <!-- Hours input field -->
           <div class="input-holder">
-            <label for="dust-hours-input">Hours After Impact ⏰</label>
+            <label for="dust-hours-input" data-i18n="hoursInputLabel">Hours After Impact ⏰</label>
             <input type="number" id="dust-hours-input" class="form-control" placeholder="Enter hours" value="1"
-              min="0.1" step="0.1">
+              min="0.1" step="0.1" data-i18n-placeholder="enterHoursPlaceholder">
           </div>
 
-          <div>Radius: <span id="result-dust-radius">--</span> km</div>
-          <div>Height: <span id="result-dust-height">--</span> km</div>
-          <div>Density: <span id="result-dust-density">--</span> particles/m³</div>
-          <div>Affected Population: <span id="result-dust-population">--</span> people 👥</div>
+          <div data-i18n-label="radiusResult">Radius: <span id="result-dust-radius">--</span> km</div>
+          <div data-i18n-label="heightResult">Height: <span id="result-dust-height">--</span> km</div>
+          <div data-i18n-label="densityResult">Density: <span id="result-dust-density">--</span> particles/m³</div>
         </div>
       </div>
     </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script type="module" src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 
 </html>
